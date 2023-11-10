@@ -27,7 +27,7 @@ export class InteractionCreate {
                 const nowInMs = Date.now();
                 const nowInSecond = Math.round(nowInMs / 1000);
 
-                const logEmbed = new EmbedBuilder().setColor('#e91e63');
+                const logEmbed = new EmbedBuilder().setColor('#EC645D');
                 const executedCommand = interaction.toString();
 
                 logEmbed.addFields({

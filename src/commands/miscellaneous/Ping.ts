@@ -21,7 +21,7 @@ export class Ping {
         const latency = msg.createdTimestamp - interaction.createdTimestamp;
         deletableCheck(msg, 0);
 
-        const embed = new EmbedBuilder().setColor('#e91e63').addFields([
+        const embed = new EmbedBuilder().setColor('#EC645D').addFields([
             {
                 name: `**${client.user?.username} - Ping**`,
                 value: `**◎ Bot Latency:** \`${latency}ms\`

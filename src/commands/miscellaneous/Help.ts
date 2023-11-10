@@ -21,7 +21,7 @@ export class Help {
 
         // Create the initial embed for the message
         const embed = new EmbedBuilder()
-            .setColor('#e91e63')
+            .setColor('#EC645D')
             .setDescription(`Hey, I'm **__${client.user?.username}__**`)
             .setAuthor({ name: `${client.user?.username} Help`, iconURL: `${interaction.guild?.iconURL()}` })
             .setThumbnail(`${client.user?.displayAvatarURL()}`)
@@ -84,7 +84,7 @@ export class Help {
         // Check if the user interacting with the select menu is the command executor
         if (interaction.user.id !== interaction.message.interaction?.user.id) {
             const wrongUserMessage = new EmbedBuilder()
-                .setColor('#e91e63')
+                .setColor('#EC645D')
                 .addFields({
                     name: `**${client.user?.username} - ${capitalise(interaction.message.interaction?.commandName ?? '')}**`,
                     value: '**◎ Error:** Only the command executor can select an option!',
@@ -116,7 +116,7 @@ export class Help {
 
         // Create an embed to display the selected category's commands
         const embed = new EmbedBuilder()
-            .setColor('#e91e63')
+            .setColor('#EC645D')
             .setDescription(`Hey, I'm **__${client.user?.username}__**`)
             .setAuthor({ name: `${client.user?.username} Help`, iconURL: `${interaction.guild?.iconURL()}` })
             .setThumbnail(`${client.user?.displayAvatarURL()}`)

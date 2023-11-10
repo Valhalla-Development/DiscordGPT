@@ -1,0 +1,39 @@
+{
+  "name": "bot-template",
+  "version": "1.0.41",
+  "main": "build/Main.js",
+  "repository": "https://github.com/Valhalla-Development/Bot-Template.git",
+  "author": "Ragnar Lothbrok <ragnarlothbrokjr@proton.me>",
+  "license": "GPL-3.0-or-later",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/Main.js",
+    "dev": "ts-node-esm src/Main.ts",
+    "audit": "npx eslint . --format codeframe"
+  },
+  "type": "module",
+  "dependencies": {
+    "@discordx/importer": "^1.2.3",
+    "@discordx/utilities": "^5.2.1",
+    "colors": "^1.4.0",
+    "discord.js": "^14.13.0",
+    "discordx": "^11.7.6",
+    "dotenv": "^16.3.1",
+    "moment": "^2.29.4",
+    "systeminformation": "^5.21.13"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.8",
+    "@typescript-eslint/eslint-plugin": "^6.9.0",
+    "@typescript-eslint/parser": "^6.9.0",
+    "eslint": "^8.52.0",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-formatter-codeframe": "^7.32.1",
+    "eslint-plugin-import": "^2.29.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}

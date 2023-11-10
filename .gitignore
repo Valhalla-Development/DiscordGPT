@@ -1,0 +1,38 @@
+# ========================
+# System generated files
+# ========================
+
+# macOS generated files
+.DS_Store
+
+# ========================
+# Node.js related files
+# ========================
+
+# Dependency directories
+node_modules/
+
+# Environment variables
+.env
+
+# ========================
+# Build output
+# ========================
+
+# Build directory
+build/
+
+# ========================
+# IDEs and editors
+# ========================
+
+# JetBrains IDEs (e.g., WebStorm, IntelliJ)
+.idea/
+
+# ========================
+# Dependency management
+# ========================
+
+# Yarn: lock file and error log
+yarn.lock
+yarn-error.log

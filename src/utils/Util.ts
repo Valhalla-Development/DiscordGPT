@@ -72,8 +72,8 @@ export async function getCommandIds(client: Client): Promise<{ [name: string]: s
 export async function loadAssistant(client: Client, message: Message | CommandInteraction, query: string): Promise<string | undefined> {
     const str = query.replaceAll(/<@!?(\d+)>/g, '');
 
-    if (!str.length || str.length <= 10) {
-        return 'Please enter a valid query, with a minimum length of 10 characters.';
+    if (!str.length || str.length <= 5) {
+        return 'Please enter a valid query, with a minimum length of 5 characters.';
     }
 
     try {

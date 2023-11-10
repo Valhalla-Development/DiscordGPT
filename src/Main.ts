@@ -1,6 +1,6 @@
 import { dirname, importx } from '@discordx/importer';
 import {
-    ChannelType, codeBlock, EmbedBuilder, IntentsBitField,
+    ChannelType, codeBlock, EmbedBuilder, IntentsBitField, Partials,
 } from 'discord.js';
 import { Client } from 'discordx';
 import 'dotenv/config';
@@ -9,7 +9,9 @@ import 'dotenv/config';
  * The Discord.js client instance.
  */
 const client = new Client({
-    intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMessages, IntentsBitField.Flags.MessageContent],
+    intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMessages, IntentsBitField.Flags.MessageContent,
+        IntentsBitField.Flags.DirectMessages],
+    partials: [Partials.Channel],
     silent: true,
 });
 

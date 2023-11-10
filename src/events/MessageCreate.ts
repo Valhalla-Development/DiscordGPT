@@ -27,6 +27,21 @@ export class MessageCreate {
             await message.reply({ embeds: [embed] });
         }
 
+        // Regex to match content less than or equal to 100, and ends with a question mark
+        const regex = /^.{10,100}\?$/;
+
+        // Respond to messages with a 15% chance if they end with a question mark and is less than 100 characters
+        const chance = Math.random();
+        if (chance <= 0.15) {
+            if (regex.test(message.content)) {
+                await message.channel.sendTyping();
+
+                // Query AirRepsGPT
+                await runGPT();
+                return;
+            }
+        }
+
         // Return if no one was mentioned or the user mentioned was NOT the bot.
         if (!message.mentions.users.size || !message.mentions.has(`${client.user?.id}`)) return;
 
@@ -39,20 +54,24 @@ export class MessageCreate {
             },
         ]);
 
-        try {
-            // Load the Assistant for the message content
-            const res = await loadAssistant(client, message, message.content);
+        await runGPT();
 
-            // Reply with the Assistant's response
-            if (res) {
-                await message.reply(res);
-            } else {
+        async function runGPT() {
+            try {
+                // Load the Assistant for the message content
+                const res = await loadAssistant(client, message, message.content);
+
+                // Reply with the Assistant's response
+                if (res) {
+                    await message.reply(res);
+                } else {
+                    await message.reply({ embeds: [errorEmbed] });
+                }
+            } catch (e) {
+                // Send an error message and log the error
                 await message.reply({ embeds: [errorEmbed] });
+                console.error(e);
             }
-        } catch (e) {
-            // Send an error message and log the error
-            await message.reply({ embeds: [errorEmbed] });
-            console.error(e);
         }
     }
 }

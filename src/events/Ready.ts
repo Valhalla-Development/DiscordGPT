@@ -83,8 +83,7 @@ export class Ready {
         // Set activity
         client.user?.setActivity({
             type: ActivityType.Watching,
-            name: `${client.guilds.cache.size.toLocaleString('en')} Guilds
-            ${client.guilds.cache.reduce((a, b) => a + b.memberCount, 0).toLocaleString('en')} Users`,
+            name: '/ask',
         });
     }
 }

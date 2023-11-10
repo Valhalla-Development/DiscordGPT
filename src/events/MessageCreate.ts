@@ -41,7 +41,6 @@ export class MessageCreate {
 
             if (!str.length || str.length <= 10) {
                 return 'Please enter a valid query, with a minimum length of 10 characters.';
-                return 'Please enter a valid query, with a minimum length of 10 characters.';
             }
 
             try {

@@ -1,6 +1,9 @@
 import type { Message } from 'discord.js';
-import { Client } from 'discordx';
+import type { Client } from 'discordx';
+import type { MessageContentText } from 'openai/resources/beta/threads';
 import 'colors';
+import OpenAI from 'openai';
+import { CommandInteraction, EmbedBuilder } from 'discord.js';
 
 /**
  * Capitalises the first letter of each word in a string.
@@ -56,5 +59,89 @@ export async function getCommandIds(client: Client): Promise<{ [name: string]: s
     } catch (error) {
         console.error('Error fetching global commands:', error);
         return {};
+    }
+}
+
+/**
+ * Load Assistant function to query the OpenAI API for a response.
+ * @param client - The Discord client.
+ * @param message - The message interaction.
+ * @param query - The user query to be sent to the Assistant.
+ * @returns The response text from the Assistant.
+ */
+export async function loadAssistant(client: Client, message: Message | CommandInteraction, query: string): Promise<string | undefined> {
+    const str = query.replaceAll(/<@!?(\d+)>/g, '');
+
+    if (!str.length || str.length <= 10) {
+        return 'Please enter a valid query, with a minimum length of 10 characters.';
+    }
+
+    try {
+        const openai = new OpenAI({
+            apiKey: process.env.OpenAiKey,
+        });
+
+        // Retrieve the Assistant information
+        const assistant = await openai.beta.assistants.retrieve(`${process.env.AssistantId}`);
+
+        // Create a new thread
+        const thread = await openai.beta.threads.create();
+
+        // Add a user message to the thread
+        await openai.beta.threads.messages.create(thread.id, {
+            role: 'user',
+            content: str,
+        });
+
+        // Create a run with the Assistant
+        const createRun = await openai.beta.threads.runs.create(thread.id, {
+            assistant_id: assistant.id,
+        });
+
+        let retrieve = await openai.beta.threads.runs.retrieve(thread.id, createRun.id);
+
+        // Define a sleep function
+        const sleep = (ms: number): Promise<void> => new Promise<void>((resolve) => {
+            setTimeout(resolve, ms);
+        });
+
+        console.log(`Queued query: ${str}`);
+
+        /**
+         * Check the completion status of the query run.
+         */
+        async function checkCompletion() {
+            console.log(`Status: ${retrieve.status}`);
+            if (retrieve.status !== 'completed') {
+                await sleep(2000);
+                retrieve = await openai.beta.threads.runs.retrieve(thread.id, createRun.id);
+                await checkCompletion();
+            }
+        }
+
+        await checkCompletion();
+
+        // Get the list of messages in the thread
+        const messages = await openai.beta.threads.messages.list(thread.id);
+
+        console.log('Completed query.');
+
+        // Extract text value from the Assistant's response
+        const textValue = (messages.data[0].content[0] as MessageContentText)?.text?.value;
+
+        return textValue;
+    } catch (error) {
+        // Handling errors
+        const errorEmbed = new EmbedBuilder().setColor('#EC645D').addFields([
+            {
+                name: `**${client.user?.username}**`,
+                value: 'An error occurred, please report this to a member of our moderation team.',
+            },
+        ]);
+
+        // Send an error message and log the error
+        await message.reply({ embeds: [errorEmbed] });
+        console.error(error);
+        return undefined;
     }
 }

@@ -1,6 +1,6 @@
 {
-  "name": "bot-template",
-  "version": "1.0.41",
+  "name": "airreps-ai-bot",
+  "version": "1.0.0",
   "main": "build/Main.js",
   "repository": "https://github.com/Valhalla-Development/Bot-Template.git",
   "author": "Ragnar Lothbrok <ragnarlothbrokjr@proton.me>",
@@ -10,7 +10,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "start": "node build/Main.js",
+    "start": "tsc && node build/Main.js",
     "dev": "ts-node-esm src/Main.ts",
     "audit": "npx eslint . --format codeframe"
   },

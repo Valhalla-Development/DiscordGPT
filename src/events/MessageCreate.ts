@@ -33,7 +33,7 @@ export class MessageCreate {
 
         // Respond to messages with a 15% chance if they end with a question mark and is less than 100 characters
         const chance = Math.random();
-        if (chance <= 0.10) {
+        if (chance <= 0.04) {
             if (regex.test(message.content)) {
                 await message.channel.sendTyping();
 

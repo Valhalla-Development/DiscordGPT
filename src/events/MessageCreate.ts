@@ -46,10 +46,8 @@ export class MessageCreate {
         // Return if no one was mentioned or the user mentioned was NOT the bot.
         if (!message.mentions.users.size || !message.mentions.has(`${client.user?.id}`)) return;
 
-        // Staff feature, where pinging AirRepsGPT while replying to another user will trigger the GPT provider.
-        const staffRoles = process.env.StaffRoles?.split(',');
-        const isStaff = staffRoles?.some((roleID) => message.member?.roles.cache.has(roleID));
-        if (isStaff && message.reference) {
+        // Pinging AirRepsGPT while replying to another user will trigger the GPT provider.
+        if (message.reference && !message.mentions.has(`${client.user?.id}`)) {
             try {
                 const repliedMessage = await message.channel.messages.fetch(`${message.reference.messageId}`);
 

@@ -128,8 +128,9 @@ export async function loadAssistant(client: Client, message: Message | CommandIn
 
         // Extract text value from the Assistant's response
         const textValue = (messages.data[0].content[0] as MessageContentText)?.text?.value;
+        const cleanedStr = textValue.replaceAll(/【.*?】/g, '');
 
-        return textValue;
+        return cleanedStr;
     } catch (error) {
         // Handling errors
         const errorEmbed = new EmbedBuilder().setColor('#EC645D').addFields([

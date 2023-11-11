@@ -1,6 +1,6 @@
 {
   "name": "airrepsgpt",
-  "version": "1.0.23",
+  "version": "1.0.24",
   "main": "build/Main.js",
   "repository": "https://github.com/Valhalla-Development/Bot-Template.git",
   "author": "Ragnar Lothbrok <ragnarlothbrokjr@proton.me>",

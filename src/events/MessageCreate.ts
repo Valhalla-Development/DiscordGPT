@@ -48,6 +48,7 @@ export class MessageCreate {
 
         // Pinging AirRepsGPT while replying to another user will trigger the GPT provider.
         if (message.reference) {
+            if (message.author.id === client.user?.id && message.mentions.has(`${client.user?.id}`)) return;
             try {
                 const repliedMessage = await message.channel.messages.fetch(`${message.reference.messageId}`);
 

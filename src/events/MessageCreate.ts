@@ -51,7 +51,7 @@ export class MessageCreate {
             try {
                 const repliedMessage = await message.channel.messages.fetch(`${message.reference.messageId}`);
 
-                if (repliedMessage && !repliedMessage.author.bot) {
+                if (repliedMessage && (!repliedMessage.author.bot || repliedMessage.author.id === client.user?.id)) {
                     await message.channel.sendTyping();
                     await runGPT(repliedMessage.content, repliedMessage);
                 }

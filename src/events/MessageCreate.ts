@@ -35,49 +35,53 @@ export class MessageCreate {
         const chance = Math.random();
         if (chance <= 0.04) {
             if (regex.test(message.content)) {
-                await message.channel.sendTyping();
-
                 // Query AirRepsGPT
                 await runGPT(message.content, message);
                 return;
             }
         }
 
-        // Return if no one was mentioned or the user mentioned was NOT the bot.
-        if (!message.mentions.users.size || !message.mentions.has(`${client.user?.id}`)) return;
-
-        // Pinging AirRepsGPT while replying to another user will trigger the GPT provider.
+        // Trigger the GPT provider when pinging AirRepsGPT in a reply to another user.
         if (message.reference) {
             try {
                 const repliedMessage = await message.channel.messages.fetch(`${message.reference.messageId}`);
 
-                if (repliedMessage && (!repliedMessage.author.bot || repliedMessage.author.id !== client.user?.id)) {
+                // Process the message content as a reply to the bot itself.
+                if (repliedMessage && (message.author.id !== client.user?.id && repliedMessage.author.id === client.user?.id)) {
+                    await runGPT(message.content, message);
+                    return;
+                }
+
+                // Stop if no user was mentioned or if the mentioned user is not the bot.
+                if (!message.mentions.users.size || !message.mentions.has(`${client.user?.id}`)) return;
+
+                if (repliedMessage && (!repliedMessage.author.bot && message.author.id !== client.user?.id)) {
                     // Check if the user has available queries.
                     const check = await checkGptAvailability(repliedMessage.author.id);
+
                     if (typeof check === 'string') {
+                        // Replace pronouns and respond to the referenced message user's query status.
                         await message.reply(check
                             .replace('you\'ve', `${repliedMessage.author} has`)
                             .replaceAll('your', 'their')).then((msg) => deletableCheck(msg, 6000));
                         return;
                     }
 
-                    await message.channel.sendTyping();
+                    // If the query limit is not reached, run GPT on the referenced message content.
                     await runGPT(repliedMessage.content, repliedMessage);
+                    return;
                 }
+
+                // Process the current message if no referenced message is found or self-response is detected.
+                await runGPT(message.content, message);
                 return;
             } catch (e) {
                 console.error('Error fetching or processing the replied message:', e);
             }
         }
 
-        // Check if the user has available queries.
-        const check = await checkGptAvailability(message.author?.id);
-        if (typeof check === 'string') {
-            await message.reply(check).then((msg) => setTimeout(() => msg.delete(), 6000));
-            return;
-        }
-
-        await message.channel.sendTyping();
+        // Stop if no user was mentioned or if the mentioned user is not the bot.
+        if (!message.mentions.users.size || !message.mentions.has(`${client.user?.id}`)) return;
 
         const errorEmbed = new EmbedBuilder().setColor('#EC645D').addFields([
             {
@@ -90,6 +94,15 @@ export class MessageCreate {
 
         async function runGPT(cnt: string, msg: Message) {
             try {
+                // Check if the user has available queries.
+                const check = await checkGptAvailability(message.author?.id);
+                if (typeof check === 'string') {
+                    await message.reply(check).then((ms) => setTimeout(() => ms.delete(), 6000));
+                    return;
+                }
+
+                await message.channel.sendTyping();
+
                 // Load the Assistant for the message content
                 const res = await loadAssistant(client, message, cnt);
 

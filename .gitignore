@@ -41,4 +41,4 @@ yarn-error.log
 # Database file
 # ========================
 
-data/db.sqlite
+src/data/db.sqlite

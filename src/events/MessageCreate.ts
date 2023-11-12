@@ -60,13 +60,11 @@ export class MessageCreate {
 
                 if (repliedMessage && (!repliedMessage.author.bot && message.author.id !== client.user?.id)) {
                     // Check if the user has available queries.
-                    const check = await checkGptAvailability(repliedMessage.author.id);
+                    const check = await checkGptAvailability(message.author.id);
 
                     if (typeof check === 'string') {
                         // Replace pronouns and respond to the referenced message user's query status.
-                        await message.reply(check
-                            .replace('you\'ve', `${repliedMessage.author} has`)
-                            .replaceAll('your', 'their')).then((msg) => deletableCheck(msg, 6000));
+                        await message.reply(check);
                         return;
                     }
 

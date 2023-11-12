@@ -2,7 +2,7 @@ import type { ArgsOf, Client } from 'discordx';
 import type { Message } from 'discord.js';
 import { Discord, On } from 'discordx';
 import { EmbedBuilder } from 'discord.js';
-import { loadAssistant } from '../utils/Util.js';
+import { checkGptAvailability, deletableCheck, loadAssistant } from '../utils/Util.js';
 
 @Discord()
 export class MessageCreate {
@@ -52,6 +52,13 @@ export class MessageCreate {
                 const repliedMessage = await message.channel.messages.fetch(`${message.reference.messageId}`);
 
                 if (repliedMessage && (!repliedMessage.author.bot || repliedMessage.author.id !== client.user?.id)) {
+                    // Check if the user has available queries.
+                    const check = await checkGptAvailability(repliedMessage.author.id);
+                    if (typeof check === 'string') {
+                        await message.reply(check.replace('You\'ve', `${repliedMessage.author} has`)).then((msg) => deletableCheck(msg, 5000));
+                        return;
+                    }
+
                     await message.channel.sendTyping();
                     await runGPT(repliedMessage.content, repliedMessage);
                 }
@@ -59,6 +66,13 @@ export class MessageCreate {
             } catch (e) {
                 console.error('Error fetching or processing the replied message:', e);
             }
+        }
+
+        // Check if the user has available queries.
+        const check = await checkGptAvailability(message.author?.id);
+        if (typeof check === 'string') {
+            await message.reply(check).then((msg) => setTimeout(() => msg.delete(), 5000));
+            return;
         }
 
         await message.channel.sendTyping();

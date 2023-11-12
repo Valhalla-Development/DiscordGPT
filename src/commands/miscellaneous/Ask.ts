@@ -3,7 +3,7 @@ import { Discord, Slash, SlashOption } from 'discordx';
 import type { CommandInteraction } from 'discord.js';
 import { ApplicationCommandOptionType, EmbedBuilder } from 'discord.js';
 import { Category } from '@discordx/utilities';
-import { loadAssistant } from '../../utils/Util.js';
+import { checkGptAvailability, loadAssistant } from '../../utils/Util.js';
 
 @Discord()
 @Category('Miscellaneous')
@@ -29,6 +29,13 @@ export class Ask {
             client: Client,
     ) {
         if (!interaction.channel) return;
+
+        // Check if the user has available queries.
+        const check = await checkGptAvailability(interaction.user?.id);
+        if (typeof check === 'string') {
+            await interaction.reply({ content: check, ephemeral: true }).then((msg) => setTimeout(() => msg.delete(), 5000));
+            return;
+        }
 
         await interaction.deferReply();
 

@@ -36,3 +36,9 @@ build/
 # Yarn: lock file and error log
 yarn.lock
 yarn-error.log
+
+# ========================
+# Database file
+# ========================
+
+data/db.sqlite

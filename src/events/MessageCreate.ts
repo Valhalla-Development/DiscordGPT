@@ -64,7 +64,7 @@ export class MessageCreate {
 
                     if (typeof check === 'string') {
                         // Replace pronouns and respond to the referenced message user's query status.
-                        await message.reply(check);
+                        await message.reply(check).then((msg) => deletableCheck(msg, 6000));
                         return;
                     }
 

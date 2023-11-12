@@ -55,7 +55,9 @@ export class MessageCreate {
                     // Check if the user has available queries.
                     const check = await checkGptAvailability(repliedMessage.author.id);
                     if (typeof check === 'string') {
-                        await message.reply(check.replace('You\'ve', `${repliedMessage.author} has`)).then((msg) => deletableCheck(msg, 5000));
+                        await message.reply(check
+                            .replace('you\'ve', `${repliedMessage.author} has`)
+                            .replaceAll('your', 'their')).then((msg) => deletableCheck(msg, 6000));
                         return;
                     }
 
@@ -71,7 +73,7 @@ export class MessageCreate {
         // Check if the user has available queries.
         const check = await checkGptAvailability(message.author?.id);
         if (typeof check === 'string') {
-            await message.reply(check).then((msg) => setTimeout(() => msg.delete(), 5000));
+            await message.reply(check).then((msg) => setTimeout(() => msg.delete(), 6000));
             return;
         }
 

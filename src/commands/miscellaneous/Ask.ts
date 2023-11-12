@@ -33,7 +33,7 @@ export class Ask {
         // Check if the user has available queries.
         const check = await checkGptAvailability(interaction.user?.id);
         if (typeof check === 'string') {
-            await interaction.reply({ content: check, ephemeral: true }).then((msg) => setTimeout(() => msg.delete(), 5000));
+            await interaction.reply({ content: check, ephemeral: true }).then((msg) => setTimeout(() => msg.delete(), 6000));
             return;
         }
 

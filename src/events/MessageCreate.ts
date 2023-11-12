@@ -34,6 +34,9 @@ export class MessageCreate {
         // Respond to messages with a 15% chance if they end with a question mark and is less than 100 characters
         const chance = Math.random();
         if (chance <= 0.04) {
+            // Return if the query is a reply.
+            if (message.reference) return;
+
             if (regex.test(message.content)) {
                 // Query AirRepsGPT
                 await runGPT(message.content, message);

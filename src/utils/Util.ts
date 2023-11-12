@@ -197,6 +197,9 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
     const currentTime = new Date();
     const expirationTime = new Date(currentTime.getTime() + (24 * 60 * 60 * 1000));
 
+    // Variable for rate limit.
+    const { RateLimit } = process.env;
+
     // User's query data exists.
     if (userQueryData) {
         // User has exhausted their query limit.
@@ -205,7 +208,7 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
 
             // 24 hours have passed since the initial entry. Resetting data.
             if (currentTime > expiration) {
-                await setGptQueryData(userId, 4, Number(expirationTime));
+                await setGptQueryData(userId, Number(RateLimit), Number(expirationTime));
                 return true;
             }
 
@@ -223,6 +226,6 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
     }
 
     // User has no existing data. Creating a new entry.
-    await setGptQueryData(userId, 4, Number(expirationTime));
+    await setGptQueryData(userId, Number(RateLimit), Number(expirationTime));
     return true;
 }

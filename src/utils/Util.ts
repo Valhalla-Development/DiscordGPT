@@ -1,9 +1,13 @@
 import type { Message } from 'discord.js';
+import { CommandInteraction, EmbedBuilder } from 'discord.js';
 import type { Client } from 'discordx';
 import type { MessageContentText } from 'openai/resources/beta/threads';
 import 'colors';
 import OpenAI from 'openai';
-import { CommandInteraction, EmbedBuilder } from 'discord.js';
+import Keyv from 'keyv';
+
+const keyv = new Keyv('sqlite://src/data/db.sqlite', { namespace: 'userGptQuery' });
+keyv.on('error', (err) => console.log('Connection Error', err));
 
 /**
  * Capitalises the first letter of each word in a string.
@@ -69,7 +73,11 @@ export async function getCommandIds(client: Client): Promise<{ [name: string]: s
  * @param query - The user query to be sent to the Assistant.
  * @returns The response text from the Assistant.
  */
-export async function loadAssistant(client: Client, message: Message | CommandInteraction, query: string): Promise<string | undefined> {
+export async function loadAssistant(
+    client: Client,
+    message: Message | CommandInteraction,
+    query: string,
+): Promise<string |undefined> {
     const str = query.replaceAll(/<@!?(\d+)>/g, '');
 
     if (!str.length || str.length <= 5) {
@@ -128,9 +136,7 @@ export async function loadAssistant(client: Client, message: Message | CommandIn
 
         // Extract text value from the Assistant's response
         const textValue = (messages.data[0].content[0] as MessageContentText)?.text?.value;
-        const cleanedStr = textValue.replaceAll(/【.*?】/g, '');
-
-        return cleanedStr;
+        return textValue.replaceAll(/【.*?】/g, '');
     } catch (error) {
         // Handling errors
         const errorEmbed = new EmbedBuilder().setColor('#EC645D').addFields([
@@ -145,4 +151,78 @@ export async function loadAssistant(client: Client, message: Message | CommandIn
         console.error(error);
         return undefined;
     }
+}
+
+/**
+ * Sets GPT query data for a specific user.
+ * @param userId - The ID of the user.
+ * @param queriesRemaining - The remaining queries for the user.
+ * @param expiration - The expiration timestamp for the data.
+ * @returns A promise that resolves with the newly set data.
+ */
+export async function setGptQueryData(
+    userId: string,
+    queriesRemaining: number,
+    expiration: number,
+): Promise<{ queriesRemaining: number; expiration: number }> {
+    await keyv.set(userId, { queriesRemaining, expiration });
+    return { queriesRemaining, expiration };
+}
+
+/**
+ * Retrieves GPT query data for a specific user.
+ * @param userId - The ID of the user.
+ * @returns A promise that resolves with the retrieved data or `false` if no data is found.
+ */
+export async function getGptQueryData(
+    userId: string,
+): Promise<{ queriesRemaining: number; expiration: number } | false> {
+    const data = await keyv.get(userId);
+
+    // If data exists, return it
+    if (data) return data;
+    // else return false
+    return false;
+}
+
+/**
+ * Checks GPT availability for a specific user and manages query limits.
+ * @param userId - The ID of the user.
+ * @returns A string indicating the reset time or a boolean for query availability.
+ */
+export async function checkGptAvailability(userId: string): Promise<string | boolean> {
+    // Retrieve user's GPT query data from the database.
+    const userQueryData = await getGptQueryData(userId);
+
+    const currentTime = new Date();
+    const expirationTime = new Date(currentTime.getTime() + (24 * 60 * 60 * 1000));
+
+    // User's query data exists.
+    if (userQueryData) {
+        // User has exhausted their query limit.
+        if (userQueryData.queriesRemaining <= 0) {
+            const expiration = new Date(userQueryData.expiration);
+
+            // 24 hours have passed since the initial entry. Resetting data.
+            if (currentTime > expiration) {
+                await setGptQueryData(userId, 4, Number(expirationTime));
+                return true;
+            }
+
+            // Queries expired, 24 hours not passed.
+            // Convert the expiration time to epoch time
+            const epochTime = Math.floor(Number(expiration) / 1000);
+
+            // Return a string indicating the reset time of available queries
+            return `You've used all available queries. They'll reset at <t:${epochTime}:R>.`;
+        }
+
+        // User has queries remaining, remove 1 query from the database.
+        await setGptQueryData(userId, userQueryData.queriesRemaining - 1, Number(userQueryData.expiration));
+        return true;
+    }
+
+    // User has no existing data. Creating a new entry.
+    await setGptQueryData(userId, 4, Number(expirationTime));
+    return true;
 }

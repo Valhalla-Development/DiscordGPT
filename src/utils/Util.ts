@@ -221,11 +221,11 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
         }
 
         // User has queries remaining, remove 1 query from the database.
-        await setGptQueryData(userId, userQueryData.queriesRemaining - 1, Number(userQueryData.expiration));
+        await setGptQueryData(userId, Number(userQueryData.queriesRemaining) - 1, Number(userQueryData.expiration));
         return true;
     }
 
     // User has no existing data. Creating a new entry.
-    await setGptQueryData(userId, Number(RateLimit), Number(expirationTime));
+    await setGptQueryData(userId, Number(RateLimit) - 1, Number(expirationTime));
     return true;
 }

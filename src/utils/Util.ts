@@ -246,19 +246,28 @@ export async function getGptQueryData(
  * @returns A string indicating the reset time or a boolean for query availability.
  */
 export async function checkGptAvailability(userId: string): Promise<string | boolean> {
+    // Variable for rate limit.
+    const { RateLimit } = process.env;
+
     // Fetch whitelist data
     const data = await whitelist.get(userId);
-    // If data, user is whitelisted
-    if (data) return true;
 
     // Retrieve user's GPT query data from the database.
     const userQueryData = await getGptQueryData(userId);
 
+    // If data, user is whitelisted
+    if (data) {
+        if (userQueryData) {
+            await setGptQueryData(userId, Number(userQueryData.totalQueries) + Number(1), Number(RateLimit), Number(1));
+        } else {
+            // User has no existing data. Creating a new entry.
+            await setGptQueryData(userId, Number(1), Number(RateLimit) - Number(RateLimit), Number(1));
+        }
+        return true;
+    }
+
     const currentTime = new Date();
     const expirationTime = new Date(currentTime.getTime() + (24 * 60 * 60 * 1000));
-
-    // Variable for rate limit.
-    const { RateLimit } = process.env;
 
     // User's query data exists.
     if (userQueryData) {

@@ -1,11 +1,10 @@
-import type { Client } from 'discordx';
 import {
-    Discord, Slash, SlashOption,
+    Discord, Slash, SlashChoice, SlashOption,
 } from 'discordx';
 import type { CommandInteraction } from 'discord.js';
 import { ApplicationCommandOptionType, GuildMember } from 'discord.js';
 import { Category } from '@discordx/utilities';
-import { getGptWhitelist, setGptWhitelist } from '../../utils/Util.js';
+import { deleteGptWhitelist, getGptWhitelist, setGptWhitelist } from '../../utils/Util.js';
 
 @Discord()
 @Category('Staff')
@@ -18,8 +17,19 @@ export class Whitelist {
      * @param client - The Discord client.
      */
     async whitelist(
+    @SlashChoice({ name: 'Add', value: 'add' })
+    @SlashChoice({ name: 'Remove', value: 'remove' })
+    @SlashChoice({ name: 'Check', value: 'check' })
     @SlashOption({
-        description: 'Add',
+        description: 'Whitelist',
+        name: 'option',
+        required: true,
+        type: ApplicationCommandOptionType.String,
+    })
+        option: string,
+
+    @SlashOption({
+        description: 'User',
         name: 'user',
         required: true,
         type: ApplicationCommandOptionType.User,
@@ -27,7 +37,6 @@ export class Whitelist {
         user: GuildMember,
 
         interaction: CommandInteraction,
-        client: Client,
     ) {
         if (!interaction.channel) return;
 
@@ -36,21 +45,56 @@ export class Whitelist {
         const isAdmin = adminIds?.some((id) => id === interaction.user.id);
 
         if (!isAdmin) {
-            await interaction.reply({ content: '⚠️ Access Denied - This command is restricted to administrators only.', ephemeral: true });
+            await interaction.reply({
+                content: '⚠️ Access Denied - This command is restricted to administrators only.',
+                ephemeral: true,
+            });
             return;
         }
 
-        // Command executor is an admin, add the user to the whitelist, if they are not already whitelisted.
+        // Fetch the users whitelist status
         const getDb = await getGptWhitelist(user.id);
 
-        // User is already whitelisted.
-        if (getDb) {
-            await interaction.reply({ content: '⚠️ User Already Whitelisted.', ephemeral: true });
-            return;
+        // Add user to whitelist
+        if (option === 'add') {
+            // User is already whitelisted.
+            if (getDb) {
+                await interaction.reply({ content: '⚠️ User Already Whitelisted.', ephemeral: true });
+                return;
+            }
+
+            // Update the whitelist and send a success message.
+            await setGptWhitelist(user.id);
+            await interaction.reply({
+                content: '✅ User Whitelisted - The user has been successfully added to the whitelist.',
+                ephemeral: true,
+            });
         }
 
-        // Update the whitelist and send a success message.
-        await setGptWhitelist(user.id);
-        await interaction.reply({ content: '✅ User Whitelisted - The user has been successfully added to the whitelist.', ephemeral: true });
+        // Remove user from whitelist
+        if (option === 'remove') {
+            // User is not whitelisted.
+            if (!getDb) {
+                await interaction.reply({ content: '⚠️ User is not Whitelisted.', ephemeral: true });
+                return;
+            }
+
+            // Update the whitelist and send a success message.
+            await deleteGptWhitelist(user.id);
+            await interaction.reply({
+                content: '✅ User Removed - The user has been successfully removed from the whitelist.',
+                ephemeral: true,
+            });
+        }
+
+        // Remove user from whitelist
+        if (option === 'check') {
+            // User is not whitelisted.
+            if (!getDb) {
+                await interaction.reply({ content: '⚠️ User is not Whitelisted.', ephemeral: true });
+            } else {
+                await interaction.reply({ content: '✅️ User is Whitelisted.', ephemeral: true });
+            }
+        }
     }
 }

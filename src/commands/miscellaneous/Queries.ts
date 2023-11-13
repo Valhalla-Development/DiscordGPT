@@ -47,7 +47,7 @@ export class Queries {
         });
 
         if (!getWhitelist) {
-            const remaining = `${getData.queriesRemaining}/${process.env.RateLimit}`;
+            const remaining = `${Number(process.env.RateLimit) - Number(getData.queriesRemaining)}/${process.env.RateLimit}`;
             const resetValue = getData.queriesRemaining === Number(process.env.RateLimit) ? 'N/A' : `<t:${epochTime}>`;
             fields.push(
                 {

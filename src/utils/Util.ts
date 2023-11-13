@@ -6,8 +6,10 @@ import 'colors';
 import OpenAI from 'openai';
 import Keyv from 'keyv';
 
-const keyv = new Keyv('sqlite://src/data/db.sqlite', { namespace: 'userGptQuery' });
-keyv.on('error', (err) => console.log('Connection Error', err));
+const keyv = new Keyv('sqlite://src/data/db.sqlite', { table: 'userData', namespace: 'userData' });
+const whitelist = new Keyv('sqlite://src/data/db.sqlite', { table: 'whitelist', namespace: 'whitelist' });
+keyv.on('error', (err) => console.log('[keyv] Connection Error', err));
+whitelist.on('error', (err) => console.log('[whitelist] Connection Error', err));
 
 /**
  * Capitalises the first letter of each word in a string.
@@ -154,6 +156,23 @@ export async function loadAssistant(
 }
 
 /**
+ * Sets GPT whitelist for a specific user.
+ * @param userId - The ID of the user.
+ * @returns A promise that resolves with the newly set data.
+ */
+export async function setGptWhitelist(
+    userId: string,
+): Promise<boolean> {
+    // If query data exists, delete it.
+    const checkQuery = await getGptQueryData(userId);
+    if (checkQuery) await keyv.delete(userId);
+
+    // Set the whitelist.
+    await whitelist.set(userId, true);
+    return true;
+}
+
+/**
  * Sets GPT query data for a specific user.
  * @param userId - The ID of the user.
  * @param queriesRemaining - The remaining queries for the user.
@@ -167,6 +186,22 @@ export async function setGptQueryData(
 ): Promise<{ queriesRemaining: number; expiration: number }> {
     await keyv.set(userId, { queriesRemaining, expiration });
     return { queriesRemaining, expiration };
+}
+
+/**
+ * Retrieves GPT whitelist for a specific user.
+ * @param userId - The ID of the user.
+ * @returns A promise that resolves with the retrieved data or `false` if no data is found.
+ */
+export async function getGptWhitelist(
+    userId: string,
+): Promise<boolean> {
+    const data = await whitelist.get(userId);
+
+    // If data exists, return it
+    if (data) return true;
+    // else return false
+    return false;
 }
 
 /**
@@ -191,6 +226,11 @@ export async function getGptQueryData(
  * @returns A string indicating the reset time or a boolean for query availability.
  */
 export async function checkGptAvailability(userId: string): Promise<string | boolean> {
+    // Fetch whitelist data
+    const data = await whitelist.get(userId);
+    // If data, user is whitelisted
+    if (data) return true;
+
     // Retrieve user's GPT query data from the database.
     const userQueryData = await getGptQueryData(userId);
 

@@ -176,9 +176,9 @@ export async function deleteGptWhitelist(
 export async function setGptWhitelist(
     userId: string,
 ): Promise<boolean> {
-    // If query data exists, delete it.
+    // If query data exists, reset it.
     const checkQuery = await getGptQueryData(userId);
-    if (checkQuery) await keyv.delete(userId);
+    if (checkQuery) await setGptQueryData(userId, Number(checkQuery.totalQueries), Number(process.env.RateLimit), Number(checkQuery.expiration));
 
     // Set the whitelist.
     await whitelist.set(userId, true);
@@ -188,17 +188,19 @@ export async function setGptWhitelist(
 /**
  * Sets GPT query data for a specific user.
  * @param userId - The ID of the user.
+ * @param totalQueries - Total queries made
  * @param queriesRemaining - The remaining queries for the user.
  * @param expiration - The expiration timestamp for the data.
  * @returns A promise that resolves with the newly set data.
  */
 export async function setGptQueryData(
     userId: string,
+    totalQueries: number,
     queriesRemaining: number,
     expiration: number,
-): Promise<{ queriesRemaining: number; expiration: number }> {
-    await keyv.set(userId, { queriesRemaining, expiration });
-    return { queriesRemaining, expiration };
+): Promise<{ totalQueries: number; queriesRemaining: number; expiration: number }> {
+    await keyv.set(userId, { totalQueries, queriesRemaining, expiration });
+    return { totalQueries, queriesRemaining, expiration };
 }
 
 /**
@@ -224,7 +226,7 @@ export async function getGptWhitelist(
  */
 export async function getGptQueryData(
     userId: string,
-): Promise<{ queriesRemaining: number; expiration: number } | false> {
+): Promise<{ totalQueries: number, queriesRemaining: number; expiration: number } | false> {
     const data = await keyv.get(userId);
 
     // If data exists, return it
@@ -261,7 +263,7 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
 
             // 24 hours have passed since the initial entry. Resetting data.
             if (currentTime > expiration) {
-                await setGptQueryData(userId, Number(RateLimit), Number(expirationTime));
+                await setGptQueryData(userId, Number(userQueryData.totalQueries) + Number(1), Number(RateLimit), Number(expirationTime));
                 return true;
             }
 
@@ -274,11 +276,16 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
         }
 
         // User has queries remaining, remove 1 query from the database.
-        await setGptQueryData(userId, Number(userQueryData.queriesRemaining) - 1, Number(userQueryData.expiration));
+        await setGptQueryData(
+            userId,
+            Number(userQueryData.totalQueries) + Number(1),
+            Number(userQueryData.queriesRemaining) - Number(1),
+            Number(userQueryData.expiration),
+        );
         return true;
     }
 
     // User has no existing data. Creating a new entry.
-    await setGptQueryData(userId, Number(RateLimit) - 1, Number(expirationTime));
+    await setGptQueryData(userId, Number(1), Number(RateLimit) - Number(1), Number(expirationTime));
     return true;
 }

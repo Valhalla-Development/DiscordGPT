@@ -156,6 +156,19 @@ export async function loadAssistant(
 }
 
 /**
+ * Removes GPT whitelist for a specific user.
+ * @param userId - The ID of the user.
+ * @returns A promise that resolves with the newly set data.
+ */
+export async function deleteGptWhitelist(
+    userId: string,
+) {
+    // If query data exists, delete it.
+    const checkQuery = await getGptWhitelist(userId);
+    if (checkQuery) await whitelist.delete(userId);
+}
+
+/**
  * Sets GPT whitelist for a specific user.
  * @param userId - The ID of the user.
  * @returns A promise that resolves with the newly set data.

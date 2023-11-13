@@ -178,7 +178,12 @@ export async function setGptWhitelist(
 ): Promise<boolean> {
     // If query data exists, reset it.
     const checkQuery = await getGptQueryData(userId);
-    if (checkQuery) await setGptQueryData(userId, Number(checkQuery.totalQueries), Number(process.env.RateLimit), Number(checkQuery.expiration));
+    await setGptQueryData(
+        userId,
+        Number(checkQuery ? checkQuery.totalQueries : Number(0)),
+        Number(process.env.RateLimit),
+        Number(checkQuery ? checkQuery.expiration : 1),
+    );
 
     // Set the whitelist.
     await whitelist.set(userId, true);

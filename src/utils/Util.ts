@@ -121,6 +121,8 @@ export async function loadAssistant(
          * Check the completion status of the query run.
          */
         async function checkCompletion() {
+            if (retrieve.status !== 'completed' && retrieve.status !== 'in_progress') return;
+
             console.log(`Status: ${retrieve.status}`);
             if (retrieve.status !== 'completed') {
                 await sleep(2000);

@@ -1,7 +1,7 @@
 import type { ArgsOf, Client } from 'discordx';
 import type { Message } from 'discord.js';
 import { Discord, On } from 'discordx';
-import { EmbedBuilder } from 'discord.js';
+import { codeBlock, EmbedBuilder } from 'discord.js';
 import { checkGptAvailability, deletableCheck, loadAssistant } from '../utils/Util.js';
 
 @Discord()
@@ -84,13 +84,6 @@ export class MessageCreate {
         // Stop if no user was mentioned or if the mentioned user is not the bot.
         if (!message.mentions.users.size || !message.mentions.has(`${client.user?.id}`)) return;
 
-        const errorEmbed = new EmbedBuilder().setColor('#EC645D').addFields([
-            {
-                name: `**${client.user?.username}**`,
-                value: 'An error occurred, please report this to a member of our moderation team.',
-            },
-        ]);
-
         await runGPT(message.content, message);
 
         async function runGPT(cnt: string, msg: Message) {
@@ -108,14 +101,14 @@ export class MessageCreate {
                 const res = await loadAssistant(client, message, cnt);
 
                 // Reply with the Assistant's response
-                if (res) {
+                if (typeof res === 'string') {
                     await msg.reply(res);
                 } else {
-                    await msg.reply({ embeds: [errorEmbed] });
+                    await msg.reply({ content: `An error occurred, please report this to a member of our moderation team.\n${codeBlock('ts', `${res}`)}` });
                 }
             } catch (e) {
                 // Send an error message and log the error
-                await msg.reply({ embeds: [errorEmbed] });
+                await msg.reply({ content: `An error occurred, please report this to a member of our moderation team.\n${codeBlock('ts', `${e}`)}` });
                 console.error(e);
             }
         }

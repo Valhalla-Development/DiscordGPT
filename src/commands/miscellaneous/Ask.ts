@@ -1,7 +1,7 @@
 import type { Client } from 'discordx';
 import { Discord, Slash, SlashOption } from 'discordx';
 import type { CommandInteraction } from 'discord.js';
-import { ApplicationCommandOptionType, EmbedBuilder } from 'discord.js';
+import { ApplicationCommandOptionType, codeBlock } from 'discord.js';
 import { Category } from '@discordx/utilities';
 import { checkGptAvailability, loadAssistant } from '../../utils/Util.js';
 
@@ -39,26 +39,19 @@ export class Ask {
 
         await interaction.deferReply();
 
-        const errorEmbed = new EmbedBuilder().setColor('#EC645D').addFields([
-            {
-                name: `**${client.user?.username}**`,
-                value: 'An error occurred, please report this to a member of our moderation team.',
-            },
-        ]);
-
         try {
             // Load the Assistant for the message content
             const res = await loadAssistant(client, interaction, query);
 
             // Reply with the Assistant's response
-            if (res) {
+            if (typeof res === 'string') {
                 await interaction.editReply(res);
             } else {
-                await interaction.editReply({ embeds: [errorEmbed] });
+                await interaction.editReply({ content: `An error occurred, please report this to a member of our moderation team.\n${codeBlock('ts', `${res}`)}` });
             }
         } catch (e) {
             // Send an error message and log the error
-            await interaction.editReply({ embeds: [errorEmbed] });
+            await interaction.editReply({ content: `An error occurred, please report this to a member of our moderation team.\n${codeBlock('ts', `${e}`)}` });
             console.error(e);
         }
     }

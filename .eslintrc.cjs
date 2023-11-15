@@ -31,6 +31,7 @@ module.exports = {
         'no-nested-ternary': 'off',
         'no-unused-expressions': 'off',
         'max-classes-per-file': 'off',
-        'no-use-before-define': 'off'
+        'no-use-before-define': 'off',
+        'no-throw-literal': 'off'
     },
 };

@@ -1,5 +1,5 @@
 import type { Message } from 'discord.js';
-import { CommandInteraction, EmbedBuilder } from 'discord.js';
+import { CommandInteraction } from 'discord.js';
 import type { Client } from 'discordx';
 import type { MessageContentText } from 'openai/resources/beta/threads';
 import 'colors';
@@ -79,7 +79,7 @@ export async function loadAssistant(
     client: Client,
     message: Message | CommandInteraction,
     query: string,
-): Promise<string |undefined> {
+): Promise<string | Error> {
     const str = query.replaceAll(/<@!?(\d+)>/g, '');
 
     if (!str.length || str.length <= 5) {
@@ -121,7 +121,9 @@ export async function loadAssistant(
          * Check the completion status of the query run.
          */
         async function checkCompletion() {
-            if (retrieve.status !== 'completed' && retrieve.status !== 'in_progress') return;
+            if (retrieve.status !== 'completed' && retrieve.status !== 'in_progress') {
+                throw new Error(`[Check Completion] Unexpected status: ${retrieve.status}`);
+            }
 
             console.log(`Status: ${retrieve.status}`);
             if (retrieve.status !== 'completed') {
@@ -142,18 +144,8 @@ export async function loadAssistant(
         const textValue = (messages.data[0].content[0] as MessageContentText)?.text?.value;
         return textValue.replaceAll(/【.*?】/g, '');
     } catch (error) {
-        // Handling errors
-        const errorEmbed = new EmbedBuilder().setColor('#EC645D').addFields([
-            {
-                name: `**${client.user?.username}**`,
-                value: 'An error occurred, please report this to a member of our moderation team.',
-            },
-        ]);
-
-        // Send an error message and log the error
-        await message.reply({ embeds: [errorEmbed] });
         console.error(error);
-        return undefined;
+        return error as Error;
     }
 }
 

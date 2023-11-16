@@ -11,7 +11,7 @@ import {
     GuildMember,
     GuildMemberRoleManager,
     ButtonStyle,
-    ButtonInteraction,
+    ButtonInteraction, InteractionResponse,
 } from 'discord.js';
 import { Category } from '@discordx/utilities';
 import { getGptQueryData, setGptQueryData } from '../../utils/Util.js';
@@ -19,64 +19,15 @@ import { getGptQueryData, setGptQueryData } from '../../utils/Util.js';
 @Discord()
 @Category('Miscellaneous')
 export class Queries {
-    private user: GuildMember | undefined;
+    private member: GuildMember | undefined;
 
-    private db: {
-        totalQueries: number, queriesRemaining: number; expiration: number; whitelisted: boolean;
-        blacklisted: boolean
-    } | false | undefined;
+    private msg: InteractionResponse | void | undefined;
 
-    /**
-     * Displays query information for the specified user or the message author.
-     * @param user - The optional user to lookup.
-     * @param interaction - The command interaction.
-     * @param client - The Discord client.
-     */
-    @Slash({ description: 'Displays query information for the specified user or the message author.' })
-    async queries(
-        @SlashOption({
-            description: 'User',
-            name: 'user',
-            required: false,
-            type: ApplicationCommandOptionType.User,
-        })
-            user: GuildMember | undefined,
-            interaction: CommandInteraction,
-            client: Client,
-    ) {
-        if (!interaction.channel) return;
-
-        const userId = user || interaction.user;
-        const member = interaction.guild?.members.cache.get(userId.id);
-
-        // Don't allow non-staff to view other user query data.
-        const staffRoles = process.env.StaffRoles?.split(',');
-        const isStaff = staffRoles?.some((roleID) => interaction.member?.roles instanceof GuildMemberRoleManager
-            && interaction.member.roles.cache.has(roleID));
-        if (!isStaff && userId.id !== interaction.user.id) {
-            const notStaff = new EmbedBuilder()
-                .setColor('#EC645D')
-                .addFields({
-                    name: `**${client.user?.username} - Query Checker**`,
-                    value: '**◎ Error:** Only staff members can view other users queries',
-                });
-
-            // Reply with an ephemeral message indicating the error
-            await interaction.reply({ ephemeral: true, embeds: [notStaff] });
-            return;
-        }
-
-        const getData = await getGptQueryData(userId.id);
-
-        // Store the data for later usage.
-        this.user = member;
-        this.db = getData;
-
-        if (!getData) {
-            await interaction.reply({ content: `⚠️ No data available for ${member}.`, ephemeral: true });
-            return;
-        }
-
+    private generateEmbed(
+        member: GuildMember,
+        getData: { totalQueries: number, queriesRemaining: number; expiration: number; whitelisted: boolean; blacklisted: boolean },
+        client: Client,
+    ): { embed: EmbedBuilder, row: ActionRowBuilder<ButtonBuilder> } {
         const fields = [];
         const expiration = new Date(getData.expiration);
         const epochTime = Math.floor(Number(expiration) / 1000);
@@ -127,29 +78,74 @@ export class Queries {
 
         const embed = new EmbedBuilder()
             .setTitle(`${client.user?.username} - Query Checker`)
-            .setDescription(`Viewing queries for ${userId}`)
+            .setDescription(`Viewing queries for ${member}`)
             .setThumbnail(member?.displayAvatarURL() || '')
             .setColor('#EC645D')
             .addFields(...fields);
 
-        if (isStaff && interaction.user.id !== userId.id) {
-            await interaction.reply({ embeds: [embed], components: [row] });
+        return { embed, row };
+    }
+
+    @Slash({ description: 'Displays query information for the specified user or the message author.' })
+    async queries(
+        @SlashOption({
+            description: 'User',
+            name: 'user',
+            required: false,
+            type: ApplicationCommandOptionType.User,
+        })
+            user: GuildMember | undefined,
+            interaction: CommandInteraction,
+            client: Client,
+    ) {
+        if (!interaction.channel) return;
+
+        const userId = user || interaction.user;
+        const member = interaction.guild?.members.cache.get(userId.id);
+
+        if (!member) {
+            await interaction.reply({ content: '⚠️ Error fetching member.', ephemeral: true });
+            return;
+        }
+
+        const staffRoles = process.env.StaffRoles?.split(',');
+        const isStaff = staffRoles?.some((roleID) => interaction.member?.roles instanceof GuildMemberRoleManager
+            && interaction.member.roles.cache.has(roleID));
+
+        if (!isStaff && userId.id !== interaction.user.id) {
+            const notStaff = new EmbedBuilder()
+                .setColor('#EC645D')
+                .addFields({
+                    name: `**${client.user?.username} - Query Checker**`,
+                    value: '**◎ Error:** Only staff members can view other users queries',
+                });
+
+            await interaction.reply({ ephemeral: true, embeds: [notStaff] });
+            return;
+        }
+
+        const getData = await getGptQueryData(userId.id);
+
+        this.member = member;
+
+        if (!getData) {
+            await interaction.reply({ content: `⚠️ No data available for ${member}.`, ephemeral: true });
+            return;
+        }
+
+        const { embed, row } = this.generateEmbed(member, getData, client);
+
+        if (isStaff) {
+            this.msg = await interaction.reply({ embeds: [embed], components: [row] });
             return;
         }
         await interaction.reply({ embeds: [embed] });
     }
 
-    /**
-     * Handles button click events from the "Reset Cooldown" button.
-     * @param interaction - The ButtonInteraction object that represents the user's interaction with the button.
-     * @param client - The Discord client.
-     */
     @ButtonComponent({ id: 'resetButton' })
     async resetButtonClicked(interaction: ButtonInteraction, client: Client) {
         const { RateLimit } = process.env;
-
-        // Access the stored user.
-        const { user, db } = this;
+        const { member, msg } = this;
 
         const noData = new EmbedBuilder()
             .setColor('#EC645D')
@@ -158,33 +154,41 @@ export class Queries {
                 value: '**◎ Error:** No data to reset.',
             });
 
-        // If no data or user
-        if (!db || !user) return interaction.reply({ ephemeral: true, embeds: [noData] });
+        if (!member) return interaction.reply({ ephemeral: true, embeds: [noData] });
 
-        // If the user is blacklisted or whitelisted
+        const db = await getGptQueryData(member.id);
+
+        if (!db) return interaction.reply({ ephemeral: true, embeds: [noData] });
+
         if (db.blacklisted || db.whitelisted) {
             const embed = new EmbedBuilder()
                 .setColor('#EC645D')
                 .addFields({
                     name: `**${client.user?.username} - Query Checker**`,
-                    value: `**◎ Error:** User is ${db.whitelisted ? 'whitelisted.' : 'blacklisted.'}`,
+                    value: `**◎ Error:** ${member} is ${db.whitelisted ? 'whitelisted.' : 'blacklisted.'}`,
                 });
 
             await interaction.reply({ ephemeral: true, embeds: [embed] });
             return;
         }
 
-        // If the user has not used any queries
         if (db.queriesRemaining === Number(RateLimit)) return interaction.reply({ ephemeral: true, embeds: [noData] });
 
         // Reset cooldown
-        await setGptQueryData(
-            user.id,
+        const newData = await setGptQueryData(
+            member.id,
             db.totalQueries,
             Number(RateLimit),
             Number(1),
             db.whitelisted,
             db.blacklisted,
         );
+
+        if (msg) {
+            const { embed, row } = this.generateEmbed(member, newData, client);
+
+            await msg.edit({ embeds: [embed], components: [row] });
+            await interaction.deferUpdate();
+        }
     }
 }

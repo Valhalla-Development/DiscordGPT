@@ -2,7 +2,9 @@ import type { ArgsOf, Client } from 'discordx';
 import type { Message } from 'discord.js';
 import { Discord, On } from 'discordx';
 import { codeBlock, EmbedBuilder } from 'discord.js';
-import { checkGptAvailability, deletableCheck, loadAssistant } from '../utils/Util.js';
+import {
+    checkGptAvailability, messageDelete, loadAssistant,
+} from '../utils/Util.js';
 
 @Discord()
 export class MessageCreate {
@@ -64,7 +66,7 @@ export class MessageCreate {
 
                     if (typeof check === 'string') {
                         // Replace pronouns and respond to the referenced message user's query status.
-                        await message.reply(check).then((msg) => deletableCheck(msg, 6000));
+                        await message.reply(check).then((msg) => messageDelete(msg, 6000, client));
                         return;
                     }
 
@@ -92,6 +94,14 @@ export class MessageCreate {
                 const check = await checkGptAvailability(message.author?.id);
                 if (typeof check === 'string') {
                     await message.reply(check).then((ms) => setTimeout(() => ms.delete(), 6000));
+                    return;
+                }
+
+                if (!check) {
+                    await message.reply({ content: 'You are currently blacklisted. If you believe this is a mistake, please contact a moderator.' }).then(async (m) => {
+                        messageDelete(m, 6000, client);
+                        messageDelete(message, 6000, client);
+                    });
                     return;
                 }
 

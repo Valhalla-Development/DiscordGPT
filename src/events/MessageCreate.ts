@@ -93,7 +93,7 @@ export class MessageCreate {
                 // Check if the user has available queries.
                 const check = await checkGptAvailability(message.author?.id);
                 if (typeof check === 'string') {
-                    await message.reply(check).then((ms) => setTimeout(() => ms.delete(), 6000));
+                    await message.reply(check).then((ms) => messageDelete(ms, 6000, client));
                     return;
                 }
 

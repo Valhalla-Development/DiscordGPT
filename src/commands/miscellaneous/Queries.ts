@@ -1,6 +1,10 @@
-import { Discord, Slash, SlashOption } from 'discordx';
+import {
+    Client, Discord, Slash, SlashOption,
+} from 'discordx';
 import type { CommandInteraction } from 'discord.js';
-import { ApplicationCommandOptionType, EmbedBuilder, GuildMember } from 'discord.js';
+import {
+    ApplicationCommandOptionType, EmbedBuilder, GuildMember, GuildMemberRoleManager,
+} from 'discord.js';
 import { Category } from '@discordx/utilities';
 import { getGptQueryData, getGptWhitelist } from '../../utils/Util.js';
 
@@ -11,6 +15,7 @@ export class Queries {
      * Displays query information for the specified user or the message author.
      * @param user - The optional user to lookup.
      * @param interaction - The command interaction.
+     * @param client - The Discord client.
      */
     @Slash({ description: 'Displays query information for the specified user or the message author.' })
     async queries(
@@ -22,11 +27,29 @@ export class Queries {
         })
             user: GuildMember | undefined,
             interaction: CommandInteraction,
+            client: Client,
     ) {
         if (!interaction.channel) return;
 
         const userId = user || interaction.user;
         const member = interaction.guild?.members.cache.get(userId.id);
+
+        // Don't allow non-staff to view other user query data.
+        const staffRoles = process.env.StaffRoles?.split(',');
+        const isStaff = staffRoles?.some((roleID) => interaction.member?.roles instanceof GuildMemberRoleManager
+            && interaction.member.roles.cache.has(roleID));
+        if (isStaff && userId.id !== interaction.user.id) {
+            const notStaff = new EmbedBuilder()
+                .setColor('#EC645D')
+                .addFields({
+                    name: `**${client.user?.username} - Query Checker**`,
+                    value: '**◎ Error:** Only staff members can view other users queries',
+                });
+
+            // Reply with an ephemeral message indicating the error
+            await interaction.reply({ ephemeral: true, embeds: [notStaff] });
+            return;
+        }
 
         const getData = await getGptQueryData(userId.id);
         const getWhitelist = await getGptWhitelist(userId.id);
@@ -70,7 +93,7 @@ export class Queries {
         }
 
         const embed = new EmbedBuilder()
-            .setTitle('AirRepsGPT Query Checker')
+            .setTitle(`${client.user?.username} - Query Checker`)
             .setDescription(`Viewing queries for ${userId}`)
             .setThumbnail(member?.displayAvatarURL() || '')
             .setColor('#EC645D')

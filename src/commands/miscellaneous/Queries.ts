@@ -21,8 +21,10 @@ import { getGptQueryData, setGptQueryData } from '../../utils/Util.js';
 export class Queries {
     private user: string | undefined;
 
-    private db: { totalQueries: number, queriesRemaining: number; expiration: number; whitelisted: boolean;
-        blacklisted: boolean } | false | undefined;
+    private db: {
+        totalQueries: number, queriesRemaining: number; expiration: number; whitelisted: boolean;
+        blacklisted: boolean
+    } | false | undefined;
 
     /**
      * Displays query information for the specified user or the message author.
@@ -143,7 +145,7 @@ export class Queries {
      * @param client - The Discord client.
      */
     @ButtonComponent({ id: 'resetButton' })
-    async buttonClicked(interaction: ButtonInteraction, client: Client) {
+    async resetButtonClicked(interaction: ButtonInteraction, client: Client) {
         const { RateLimit } = process.env;
 
         // Access the stored user.

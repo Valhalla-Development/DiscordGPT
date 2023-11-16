@@ -1,5 +1,5 @@
 import type { Message } from 'discord.js';
-import { CommandInteraction } from 'discord.js';
+import { CommandInteraction, PermissionsBitField } from 'discord.js';
 import type { Client } from 'discordx';
 import type { MessageContentText } from 'openai/resources/beta/threads';
 import 'colors';
@@ -22,10 +22,14 @@ export function capitalise(string: string): string {
  * Checks if a message is deletable, and deletes it after a specified amount of time.
  * @param message - The message to check.
  * @param time - The amount of time to wait before deleting the message, in milliseconds.
+ * @param client - The Discord Client instance.
  * @returns void
  */
-export function deletableCheck(message: Message, time: number): void {
+export function messageDelete(message: Message, time: number, client: Client): void {
     setTimeout(async () => {
+        if (message.author.id !== client.user?.id
+            && !message.member?.guild.members.me?.permissions.has(PermissionsBitField.Flags.ManageMessages)) return;
+
         try {
             if (message && message.deletable) {
                 await message.delete();
@@ -222,6 +226,9 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
 
     // User's query data exists.
     if (userQueryData) {
+        // If the user is blacklisted
+        if (userQueryData.blacklisted) return false;
+
         // If the user is whitelisted
         if (userQueryData.whitelisted) {
             await setGptQueryData(

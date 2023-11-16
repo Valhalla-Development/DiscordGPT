@@ -34,29 +34,29 @@ export class Queries {
 
         fields.push({
             name: 'Total Queries',
-            value: getData.totalQueries.toLocaleString(),
+            value: `\`${getData.totalQueries.toLocaleString()}\``,
             inline: true,
         });
 
-        if (!getData.whitelisted) {
+        if (!getData.whitelisted && !getData.blacklisted) {
             const remaining = `${Number(process.env.RateLimit) - Number(getData.queriesRemaining)}/${process.env.RateLimit}`;
             const resetValue = getData.queriesRemaining === Number(process.env.RateLimit) ? 'N/A' : `<t:${epochTime}>`;
             fields.push(
                 {
                     name: 'Queries Used',
-                    value: remaining,
+                    value: `\`${remaining}\``,
                     inline: true,
                 },
                 {
                     name: 'Query Reset',
-                    value: resetValue,
+                    value: `\`${resetValue}\``,
                     inline: true,
                 },
             );
         } else {
             fields.push({
-                name: 'Whitelist Status',
-                value: 'Whitelisted',
+                name: 'Status',
+                value: `${getData.whitelisted ? '`Whitelisted`' : '`Blacklisted`'}`,
                 inline: true,
             });
         }
@@ -112,7 +112,7 @@ export class Queries {
         const isStaff = staffRoles?.some((roleID) => interaction.member?.roles instanceof GuildMemberRoleManager
             && interaction.member.roles.cache.has(roleID));
 
-        if (!isStaff && userId.id !== interaction.user.id) {
+        if (!isStaff) {
             const notStaff = new EmbedBuilder()
                 .setColor('#EC645D')
                 .addFields({
@@ -135,7 +135,7 @@ export class Queries {
 
         const { embed, row } = this.generateEmbed(member, getData, client);
 
-        if (isStaff) {
+        if (isStaff && interaction.user.id !== userId.id) {
             this.msg = await interaction.reply({ embeds: [embed], components: [row] });
             return;
         }

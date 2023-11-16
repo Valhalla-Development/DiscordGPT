@@ -2,14 +2,17 @@ import {
     Discord, Slash, SlashChoice, SlashOption,
 } from 'discordx';
 import type { CommandInteraction } from 'discord.js';
-import { ApplicationCommandOptionType, GuildMember } from 'discord.js';
+import { ApplicationCommandOptionType, GuildMember, PermissionsBitField } from 'discord.js';
 import { Category } from '@discordx/utilities';
 import { deleteGptWhitelist, getGptWhitelist, setGptWhitelist } from '../../utils/Util.js';
 
 @Discord()
 @Category('Staff')
 export class Whitelist {
-    @Slash({ description: 'Manages the whitelist for the GPT module.' })
+    @Slash({
+        description: 'Manages the whitelist for the GPT module.',
+        defaultMemberPermissions: [PermissionsBitField.Flags.ManageMessages],
+    })
     /**
      * Manages the whitelist for the GPT module.
      * @param user - The user to whitelist
@@ -40,20 +43,20 @@ export class Whitelist {
     ) {
         if (!interaction.channel) return;
 
+        // Fetch the users whitelist status
+        const getDb = await getGptWhitelist(user.id);
+
         // Check if command was executed by an admin defined in the environment variable.
         const adminIds = process.env.AdminIds?.split(',');
         const isAdmin = adminIds?.some((id) => id === interaction.user.id);
 
-        if (!isAdmin) {
+        if ((option === 'add' || option === 'remove') && !isAdmin) {
             await interaction.reply({
                 content: '⚠️ Access Denied - This command is restricted to administrators only.',
                 ephemeral: true,
             });
             return;
         }
-
-        // Fetch the users whitelist status
-        const getDb = await getGptWhitelist(user.id);
 
         // Add user to whitelist
         if (option === 'add') {

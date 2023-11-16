@@ -19,7 +19,7 @@ import { getGptQueryData, setGptQueryData } from '../../utils/Util.js';
 @Discord()
 @Category('Miscellaneous')
 export class Queries {
-    private user: string | undefined;
+    private user: GuildMember | undefined;
 
     private db: {
         totalQueries: number, queriesRemaining: number; expiration: number; whitelisted: boolean;
@@ -69,7 +69,7 @@ export class Queries {
         const getData = await getGptQueryData(userId.id);
 
         // Store the data for later usage.
-        this.user = userId.id;
+        this.user = member;
         this.db = getData;
 
         if (!getData) {
@@ -179,7 +179,7 @@ export class Queries {
 
         // Reset cooldown
         await setGptQueryData(
-            user,
+            user.id,
             db.totalQueries,
             Number(RateLimit),
             Number(1),

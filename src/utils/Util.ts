@@ -121,7 +121,7 @@ export async function loadAssistant(
          * Check the completion status of the query run.
          */
         async function checkCompletion() {
-            if (retrieve.status !== 'completed' && retrieve.status !== 'in_progress') {
+            if (retrieve.status !== 'completed' && retrieve.status !== 'in_progress' && retrieve.status !== 'queued') {
                 throw new Error(`[Check Completion] Unexpected status: ${retrieve.status}`);
             }
 

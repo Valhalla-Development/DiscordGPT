@@ -153,7 +153,7 @@ export class Queries {
             const wrongUserMessage = new EmbedBuilder()
                 .setColor('#EC645D')
                 .addFields({
-                    name: `**${client.user?.username} - Query Checker)}**`,
+                    name: `**${client.user?.username} - Query Checker**`,
                     value: '**◎ Error:** Only the command executor can select an option!',
                 });
 
@@ -225,7 +225,7 @@ export class Queries {
             const wrongUserMessage = new EmbedBuilder()
                 .setColor('#EC645D')
                 .addFields({
-                    name: `**${client.user?.username} - Query Checker)}**`,
+                    name: `**${client.user?.username} - Query Checker**`,
                     value: '**◎ Error:** Only the command executor can select an option!',
                 });
 
@@ -268,6 +268,76 @@ export class Queries {
                 Number(1),
                 true,
                 false,
+            );
+        }
+
+        if (msg) {
+            const { embed, row } = this.generateEmbed(member, newData, client);
+
+            await msg.edit({ embeds: [embed], components: [row] });
+            await interaction.deferUpdate();
+        }
+    }
+
+    /**
+     * Handles button click events from the "Toggle Blacklist" button.
+     * @param interaction - The ButtonInteraction object that represents the user's interaction with the button.
+     * @param client - The Discord client.
+     */
+    @ButtonComponent({ id: 'blacklistButton' })
+    async blacklistButtonClicked(interaction: ButtonInteraction, client: Client) {
+        const { member, msg } = this;
+
+        // Return if the interaction and msg id do not match.
+        if (interaction.message.interaction?.id !== msg?.id) return interaction.deferUpdate();
+
+        if (interaction.user.id !== interaction.message.interaction?.user.id) {
+            const wrongUserMessage = new EmbedBuilder()
+                .setColor('#EC645D')
+                .addFields({
+                    name: `**${client.user?.username} - Query Checker**`,
+                    value: '**◎ Error:** Only the command executor can select an option!',
+                });
+
+            // Reply with an ephemeral message indicating the error
+            await interaction.reply({ ephemeral: true, embeds: [wrongUserMessage] });
+            return;
+        }
+
+        const { RateLimit } = process.env;
+
+        const noData = new EmbedBuilder()
+            .setColor('#EC645D')
+            .addFields({
+                name: `**${client.user?.username} - Query Checker**`,
+                value: '**◎ Error:** No data to reset.',
+            });
+
+        if (!member) return interaction.reply({ ephemeral: true, embeds: [noData] });
+
+        const db = await getGptQueryData(member.id);
+
+        let newData;
+
+        if (db) {
+            // Update blacklist status
+            newData = await setGptQueryData(
+                member.id,
+                db.totalQueries,
+                Number(RateLimit),
+                Number(1),
+                false,
+                !db.blacklisted,
+            );
+        } else {
+            // User has no existing data. Creating a new entry.
+            newData = await setGptQueryData(
+                member.id,
+                Number(1),
+                Number(RateLimit) - Number(1),
+                Number(1),
+                false,
+                true,
             );
         }
 

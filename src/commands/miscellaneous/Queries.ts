@@ -191,4 +191,57 @@ export class Queries {
             await interaction.deferUpdate();
         }
     }
+
+    /**
+     * Handles button click events from the "Toggle Whitelist" button.
+     * @param interaction - The ButtonInteraction object that represents the user's interaction with the button.
+     * @param client - The Discord client.
+     */
+    @ButtonComponent({ id: 'whitelistButton' })
+    async whitelistButtonClicked(interaction: ButtonInteraction, client: Client) {
+        const { RateLimit } = process.env;
+        const { member, msg } = this;
+
+        const noData = new EmbedBuilder()
+            .setColor('#EC645D')
+            .addFields({
+                name: `**${client.user?.username} - Query Checker**`,
+                value: '**◎ Error:** No data to reset.',
+            });
+
+        if (!member) return interaction.reply({ ephemeral: true, embeds: [noData] });
+
+        const db = await getGptQueryData(member.id);
+
+        let newData;
+
+        if (db) {
+            // Update whitelist status
+            newData = await setGptQueryData(
+                member.id,
+                db.totalQueries,
+                Number(RateLimit),
+                Number(1),
+                !db.whitelisted,
+                false,
+            );
+        } else {
+            // User has no existing data. Creating a new entry.
+            newData = await setGptQueryData(
+                member.id,
+                Number(1),
+                Number(RateLimit) - Number(1),
+                Number(1),
+                true,
+                false,
+            );
+        }
+
+        if (msg) {
+            const { embed, row } = this.generateEmbed(member, newData, client);
+
+            await msg.edit({ embeds: [embed], components: [row] });
+            await interaction.deferUpdate();
+        }
+    }
 }

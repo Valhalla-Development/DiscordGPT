@@ -49,7 +49,7 @@ export class Queries {
                 },
                 {
                     name: 'Query Reset',
-                    value: `\`${resetValue}\``,
+                    value: resetValue,
                     inline: true,
                 },
             );

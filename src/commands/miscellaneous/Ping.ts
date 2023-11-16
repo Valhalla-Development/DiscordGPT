@@ -3,7 +3,7 @@ import { Discord, Slash } from 'discordx';
 import type { CommandInteraction } from 'discord.js';
 import { EmbedBuilder } from 'discord.js';
 import { Category } from '@discordx/utilities';
-import { deletableCheck } from '../../utils/Util.js';
+import { messageDelete } from '../../utils/Util.js';
 
 @Discord()
 @Category('Miscellaneous')
@@ -19,7 +19,7 @@ export class Ping {
 
         const msg = await interaction.channel.send({ content: 'Pinging...' });
         const latency = msg.createdTimestamp - interaction.createdTimestamp;
-        deletableCheck(msg, 0);
+        messageDelete(msg, 0, client);
 
         const embed = new EmbedBuilder().setColor('#EC645D').addFields([
             {

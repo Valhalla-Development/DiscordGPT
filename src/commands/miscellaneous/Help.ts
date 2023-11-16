@@ -7,7 +7,7 @@ import {
     ActionRowBuilder, EmbedBuilder, GuildMemberRoleManager, StringSelectMenuBuilder,
 } from 'discord.js';
 import { Category, ICategory } from '@discordx/utilities';
-import { capitalise, deletableCheck, getCommandIds } from '../../utils/Util.js';
+import { capitalise, messageDelete, getCommandIds } from '../../utils/Util.js';
 
 @Discord()
 @Category('Miscellaneous')
@@ -102,7 +102,7 @@ export class Help {
 
         // Return if no value is selected
         if (!selectedValue) {
-            return deletableCheck(interaction.message, 0);
+            return messageDelete(interaction.message, 0, client);
         }
 
         // Extract the category from the selected value

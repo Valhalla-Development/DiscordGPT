@@ -4,7 +4,7 @@ import {
 import type { CommandInteraction } from 'discord.js';
 import { ApplicationCommandOptionType, GuildMember, PermissionsBitField } from 'discord.js';
 import { Category } from '@discordx/utilities';
-import { deleteGptWhitelist, getGptWhitelist, setGptWhitelist } from '../../utils/Util.js';
+import { getGptQueryData, setGptQueryData } from '../../utils/Util.js';
 
 @Discord()
 @Category('Staff')
@@ -43,8 +43,10 @@ export class Whitelist {
     ) {
         if (!interaction.channel) return;
 
-        // Fetch the users whitelist status
-        const getDb = await getGptWhitelist(user.id);
+        const { RateLimit } = process.env;
+
+        // Fetch the user's data
+        const getDb = await getGptQueryData(user.id);
 
         // Check if command was executed by an admin defined in the environment variable.
         const adminIds = process.env.AdminIds?.split(',');
@@ -61,13 +63,20 @@ export class Whitelist {
         // Add user to whitelist
         if (option === 'add') {
             // User is already whitelisted.
-            if (getDb) {
+            if (getDb && getDb.whitelisted) {
                 await interaction.reply({ content: '⚠️ User Already Whitelisted.', ephemeral: true });
                 return;
             }
 
             // Update the whitelist and send a success message.
-            await setGptWhitelist(user.id);
+            await setGptQueryData(
+                user.id,
+                getDb ? Number(getDb.totalQueries) : 1,
+                Number(RateLimit),
+                Number(1),
+                true,
+                false,
+            );
             await interaction.reply({
                 content: '✅ User Whitelisted - The user has been successfully added to the whitelist.',
                 ephemeral: true,
@@ -77,13 +86,20 @@ export class Whitelist {
         // Remove user from whitelist
         if (option === 'remove') {
             // User is not whitelisted.
-            if (!getDb) {
+            if (!getDb || !getDb.whitelisted) {
                 await interaction.reply({ content: '⚠️ User is not Whitelisted.', ephemeral: true });
                 return;
             }
 
             // Update the whitelist and send a success message.
-            await deleteGptWhitelist(user.id);
+            await setGptQueryData(
+                user.id,
+                Number(getDb.totalQueries),
+                Number(RateLimit),
+                Number(1),
+                false,
+                false,
+            );
             await interaction.reply({
                 content: '✅ User Removed - The user has been successfully removed from the whitelist.',
                 ephemeral: true,
@@ -93,7 +109,7 @@ export class Whitelist {
         // Remove user from whitelist
         if (option === 'check') {
             // User is not whitelisted.
-            if (!getDb) {
+            if (!getDb || !getDb.whitelisted) {
                 await interaction.reply({ content: '⚠️ User is not Whitelisted.', ephemeral: true });
             } else {
                 await interaction.reply({ content: '✅️ User is Whitelisted.', ephemeral: true });

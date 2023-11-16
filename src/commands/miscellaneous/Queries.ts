@@ -144,6 +144,19 @@ export class Queries {
 
     @ButtonComponent({ id: 'resetButton' })
     async resetButtonClicked(interaction: ButtonInteraction, client: Client) {
+        if (interaction.user.id !== interaction.message.interaction?.user.id) {
+            const wrongUserMessage = new EmbedBuilder()
+                .setColor('#EC645D')
+                .addFields({
+                    name: `**${client.user?.username} - Query Checker)}**`,
+                    value: '**◎ Error:** Only the command executor can select an option!',
+                });
+
+            // Reply with an ephemeral message indicating the error
+            await interaction.reply({ ephemeral: true, embeds: [wrongUserMessage] });
+            return;
+        }
+
         const { RateLimit } = process.env;
         const { member, msg } = this;
 
@@ -199,6 +212,19 @@ export class Queries {
      */
     @ButtonComponent({ id: 'whitelistButton' })
     async whitelistButtonClicked(interaction: ButtonInteraction, client: Client) {
+        if (interaction.user.id !== interaction.message.interaction?.user.id) {
+            const wrongUserMessage = new EmbedBuilder()
+                .setColor('#EC645D')
+                .addFields({
+                    name: `**${client.user?.username} - Query Checker)}**`,
+                    value: '**◎ Error:** Only the command executor can select an option!',
+                });
+
+            // Reply with an ephemeral message indicating the error
+            await interaction.reply({ ephemeral: true, embeds: [wrongUserMessage] });
+            return;
+        }
+
         const { RateLimit } = process.env;
         const { member, msg } = this;
 

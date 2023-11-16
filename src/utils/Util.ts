@@ -165,8 +165,12 @@ export async function setGptQueryData(
     whitelisted: boolean,
     blacklisted: boolean,
 ): Promise<{ totalQueries: number; queriesRemaining: number; expiration: number; whitelisted: boolean; blacklisted: boolean }> {
+    // Convert booleans to integers for SQLite storage
+    const whitelistedInt = whitelisted ? 1 : 0;
+    const blacklistedInt = blacklisted ? 1 : 0;
+
     await keyv.set(userId, {
-        totalQueries, queriesRemaining, expiration, whitelisted, blacklisted,
+        totalQueries, queriesRemaining, expiration, whitelisted: whitelistedInt, blacklisted: blacklistedInt,
     });
     return {
         totalQueries, queriesRemaining, expiration, whitelisted, blacklisted,
@@ -183,9 +187,21 @@ export async function getGptQueryData(
 ): Promise<{ totalQueries: number, queriesRemaining: number; expiration: number; whitelisted: boolean; blacklisted: boolean } | false> {
     const data = await keyv.get(userId);
 
-    // If data exists, return it
-    if (data) return data;
-    // else return false
+    // If data exists, convert integer values to booleans and return
+    if (data) {
+        const {
+            totalQueries, queriesRemaining, expiration, whitelisted, blacklisted,
+        } = data;
+        return {
+            totalQueries,
+            queriesRemaining,
+            expiration,
+            whitelisted: Boolean(whitelisted), // Convert 0 or 1 to boolean
+            blacklisted: Boolean(blacklisted), // Convert 0 or 1 to boolean
+        };
+    }
+
+    // If no data is found, return false
     return false;
 }
 

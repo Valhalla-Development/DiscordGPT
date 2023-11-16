@@ -33,7 +33,12 @@ export class Ask {
         // Check if the user has available queries.
         const check = await checkGptAvailability(interaction.user?.id);
         if (typeof check === 'string') {
-            await interaction.reply({ content: check, ephemeral: true }).then((msg) => setTimeout(() => msg.delete(), 6000));
+            await interaction.reply({ content: check, ephemeral: true });
+            return;
+        }
+
+        if (!check) {
+            await interaction.reply({ content: 'You are currently blacklisted. If you believe this is a mistake, please contact a moderator.', ephemeral: true });
             return;
         }
 

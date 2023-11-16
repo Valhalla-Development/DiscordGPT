@@ -140,6 +140,7 @@ export class Queries {
     /**
      * Handles button click events from the "Reset Cooldown" button.
      * @param interaction - The ButtonInteraction object that represents the user's interaction with the button.
+     * @param client - The Discord client.
      */
     @ButtonComponent({ id: 'resetButton' })
     async buttonClicked(interaction: ButtonInteraction, client: Client) {

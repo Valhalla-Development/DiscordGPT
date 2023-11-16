@@ -144,6 +144,11 @@ export class Queries {
 
     @ButtonComponent({ id: 'resetButton' })
     async resetButtonClicked(interaction: ButtonInteraction, client: Client) {
+        const { member, msg } = this;
+
+        // Return if the interaction and msg id do not match.
+        if (interaction.message.interaction?.id !== msg?.id) return interaction.deferUpdate();
+
         if (interaction.user.id !== interaction.message.interaction?.user.id) {
             const wrongUserMessage = new EmbedBuilder()
                 .setColor('#EC645D')
@@ -158,7 +163,6 @@ export class Queries {
         }
 
         const { RateLimit } = process.env;
-        const { member, msg } = this;
 
         const noData = new EmbedBuilder()
             .setColor('#EC645D')
@@ -212,6 +216,11 @@ export class Queries {
      */
     @ButtonComponent({ id: 'whitelistButton' })
     async whitelistButtonClicked(interaction: ButtonInteraction, client: Client) {
+        const { member, msg } = this;
+
+        // Return if the interaction and msg id do not match.
+        if (interaction.message.interaction?.id !== msg?.id) return interaction.deferUpdate();
+
         if (interaction.user.id !== interaction.message.interaction?.user.id) {
             const wrongUserMessage = new EmbedBuilder()
                 .setColor('#EC645D')
@@ -226,7 +235,6 @@ export class Queries {
         }
 
         const { RateLimit } = process.env;
-        const { member, msg } = this;
 
         const noData = new EmbedBuilder()
             .setColor('#EC645D')

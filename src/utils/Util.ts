@@ -7,9 +7,7 @@ import OpenAI from 'openai';
 import Keyv from 'keyv';
 
 const keyv = new Keyv('sqlite://src/data/db.sqlite', { table: 'userData', namespace: 'userData' });
-const whitelist = new Keyv('sqlite://src/data/db.sqlite', { table: 'whitelist', namespace: 'whitelist' });
 keyv.on('error', (err) => console.log('[keyv] Connection Error', err));
-whitelist.on('error', (err) => console.log('[whitelist] Connection Error', err));
 
 /**
  * Capitalises the first letter of each word in a string.
@@ -150,46 +148,13 @@ export async function loadAssistant(
 }
 
 /**
- * Removes GPT whitelist for a specific user.
- * @param userId - The ID of the user.
- * @returns A promise that resolves with the newly set data.
- */
-export async function deleteGptWhitelist(
-    userId: string,
-) {
-    // If query data exists, delete it.
-    const checkQuery = await getGptWhitelist(userId);
-    if (checkQuery) await whitelist.delete(userId);
-}
-
-/**
- * Sets GPT whitelist for a specific user.
- * @param userId - The ID of the user.
- * @returns A promise that resolves with the newly set data.
- */
-export async function setGptWhitelist(
-    userId: string,
-): Promise<boolean> {
-    // If query data exists, reset it.
-    const checkQuery = await getGptQueryData(userId);
-    await setGptQueryData(
-        userId,
-        Number(checkQuery ? checkQuery.totalQueries : Number(0)),
-        Number(process.env.RateLimit),
-        Number(checkQuery ? checkQuery.expiration : 1),
-    );
-
-    // Set the whitelist.
-    await whitelist.set(userId, true);
-    return true;
-}
-
-/**
  * Sets GPT query data for a specific user.
  * @param userId - The ID of the user.
  * @param totalQueries - Total queries made
  * @param queriesRemaining - The remaining queries for the user.
  * @param expiration - The expiration timestamp for the data.
+ * @param whitelisted - The whitelist status for the user.
+ * @param blacklisted - The blacklist status for the user.
  * @returns A promise that resolves with the newly set data.
  */
 export async function setGptQueryData(
@@ -197,25 +162,15 @@ export async function setGptQueryData(
     totalQueries: number,
     queriesRemaining: number,
     expiration: number,
-): Promise<{ totalQueries: number; queriesRemaining: number; expiration: number }> {
-    await keyv.set(userId, { totalQueries, queriesRemaining, expiration });
-    return { totalQueries, queriesRemaining, expiration };
-}
-
-/**
- * Retrieves GPT whitelist for a specific user.
- * @param userId - The ID of the user.
- * @returns A promise that resolves with the retrieved data or `false` if no data is found.
- */
-export async function getGptWhitelist(
-    userId: string,
-): Promise<boolean> {
-    const data = await whitelist.get(userId);
-
-    // If data exists, return it
-    if (data) return true;
-    // else return false
-    return false;
+    whitelisted: boolean,
+    blacklisted: boolean,
+): Promise<{ totalQueries: number; queriesRemaining: number; expiration: number; whitelisted: boolean; blacklisted: boolean }> {
+    await keyv.set(userId, {
+        totalQueries, queriesRemaining, expiration, whitelisted, blacklisted,
+    });
+    return {
+        totalQueries, queriesRemaining, expiration, whitelisted, blacklisted,
+    };
 }
 
 /**
@@ -225,7 +180,7 @@ export async function getGptWhitelist(
  */
 export async function getGptQueryData(
     userId: string,
-): Promise<{ totalQueries: number, queriesRemaining: number; expiration: number } | false> {
+): Promise<{ totalQueries: number, queriesRemaining: number; expiration: number; whitelisted: boolean; blacklisted: boolean } | false> {
     const data = await keyv.get(userId);
 
     // If data exists, return it
@@ -243,35 +198,41 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
     // Variable for rate limit.
     const { RateLimit } = process.env;
 
-    // Fetch whitelist data
-    const data = await whitelist.get(userId);
-
     // Retrieve user's GPT query data from the database.
     const userQueryData = await getGptQueryData(userId);
-
-    // If data, user is whitelisted
-    if (data) {
-        if (userQueryData) {
-            await setGptQueryData(userId, Number(userQueryData.totalQueries) + Number(1), Number(RateLimit), Number(1));
-        } else {
-            // User has no existing data. Creating a new entry.
-            await setGptQueryData(userId, Number(1), Number(RateLimit) - Number(RateLimit), Number(1));
-        }
-        return true;
-    }
 
     const currentTime = new Date();
     const expirationTime = new Date(currentTime.getTime() + (24 * 60 * 60 * 1000));
 
     // User's query data exists.
     if (userQueryData) {
+        // If the user is whitelisted
+        if (userQueryData.whitelisted) {
+            await setGptQueryData(
+                userId,
+                Number(userQueryData.totalQueries) + Number(1),
+                Number(RateLimit),
+                Number(1),
+                userQueryData.whitelisted,
+                userQueryData.blacklisted,
+            );
+            return true;
+        }
+
         // User has exhausted their query limit.
         if (userQueryData.queriesRemaining <= 0) {
             const expiration = new Date(userQueryData.expiration);
 
             // 24 hours have passed since the initial entry. Resetting data.
             if (currentTime > expiration) {
-                await setGptQueryData(userId, Number(userQueryData.totalQueries) + Number(1), Number(RateLimit), Number(expirationTime));
+                await setGptQueryData(
+                    userId,
+                    Number(userQueryData.totalQueries) + Number(1),
+                    Number(RateLimit),
+                    Number(expirationTime),
+                    userQueryData.whitelisted,
+                    userQueryData.blacklisted,
+                );
                 return true;
             }
 
@@ -289,11 +250,20 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
             Number(userQueryData.totalQueries) + Number(1),
             Number(userQueryData.queriesRemaining) - Number(1),
             Number(userQueryData.expiration),
+            userQueryData.whitelisted,
+            userQueryData.blacklisted,
         );
         return true;
     }
 
     // User has no existing data. Creating a new entry.
-    await setGptQueryData(userId, Number(1), Number(RateLimit) - Number(1), Number(expirationTime));
+    await setGptQueryData(
+        userId,
+        Number(1),
+        Number(RateLimit) - Number(1),
+        Number(expirationTime),
+        false,
+        false,
+    );
     return true;
 }

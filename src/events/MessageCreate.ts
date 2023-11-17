@@ -63,7 +63,6 @@ export class MessageCreate {
                 if (!message.mentions.users.size || !message.mentions.has(`${client.user?.id}`)) return;
 
                 if (repliedMessage && (!repliedMessage.author.bot && message.author.id !== client.user?.id)) {
-                    if (!processQuery(repliedMessage.content)) return;
                     // Run GPT on the referenced message content.
                     await runGPT(repliedMessage.content, repliedMessage);
                     return;

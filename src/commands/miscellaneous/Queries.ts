@@ -23,6 +23,8 @@ export class Queries {
 
     private msg: InteractionResponse | void | undefined;
 
+    private isAdmin: boolean | undefined;
+
     private generateEmbed(
         member: GuildMember,
         getData: { totalQueries: number, queriesRemaining: number; expiration: number; whitelisted: boolean; blacklisted: boolean },
@@ -65,16 +67,21 @@ export class Queries {
             new ButtonBuilder()
                 .setCustomId('resetButton')
                 .setLabel('Reset Cooldown')
-                .setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder()
-                .setCustomId('whitelistButton')
-                .setLabel('Toggle Whitelist')
-                .setStyle(ButtonStyle.Secondary),
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(getData.whitelisted || getData.blacklisted),
             new ButtonBuilder()
                 .setCustomId('blacklistButton')
                 .setLabel('Toggle Blacklist')
                 .setStyle(ButtonStyle.Secondary),
         );
+
+        // Only show whitelist button if the user is an admin.
+        if (this.isAdmin) {
+            row.addComponents(new ButtonBuilder()
+                .setCustomId('whitelistButton')
+                .setLabel('Toggle Whitelist')
+                .setStyle(ButtonStyle.Secondary));
+        }
 
         const embed = new EmbedBuilder()
             .setTitle(`${client.user?.username} - Query Checker`)
@@ -108,21 +115,14 @@ export class Queries {
             return;
         }
 
+        // Staff roles defined in env file.
         const staffRoles = process.env.StaffRoles?.split(',');
         const isStaff = staffRoles?.some((roleID) => interaction.member?.roles instanceof GuildMemberRoleManager
             && interaction.member.roles.cache.has(roleID));
-
-        if (!isStaff) {
-            const notStaff = new EmbedBuilder()
-                .setColor('#EC645D')
-                .addFields({
-                    name: `**${client.user?.username} - Query Checker**`,
-                    value: '**◎ Error:** Only staff members can view other users queries',
-                });
-
-            await interaction.reply({ ephemeral: true, embeds: [notStaff] });
-            return;
-        }
+        // Admins defined in env file.
+        const adminIds = process.env.AdminIds?.split(',');
+        const isAdmin = adminIds?.some((id) => id === interaction.user.id);
+        this.isAdmin = isAdmin;
 
         const getData = await getGptQueryData(userId.id);
 
@@ -135,7 +135,7 @@ export class Queries {
 
         const { embed, row } = this.generateEmbed(member, getData, client);
 
-        if (isStaff && interaction.user.id !== userId.id) {
+        if (isAdmin || (isStaff && interaction.user.id !== userId.id)) {
             this.msg = await interaction.reply({ embeds: [embed], components: [row] });
             return;
         }

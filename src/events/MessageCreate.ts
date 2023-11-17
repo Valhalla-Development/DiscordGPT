@@ -3,7 +3,7 @@ import type { Message } from 'discord.js';
 import { Discord, On } from 'discordx';
 import { codeBlock, EmbedBuilder } from 'discord.js';
 import {
-    checkGptAvailability, messageDelete, loadAssistant,
+    checkGptAvailability, messageDelete, loadAssistant, processQuery,
 } from '../utils/Util.js';
 
 @Discord()
@@ -40,6 +40,7 @@ export class MessageCreate {
             if (message.reference) return;
 
             if (regex.test(message.content)) {
+                if (!processQuery(message.content)) return;
                 // Query AirRepsGPT
                 await runGPT(message.content, message);
                 return;
@@ -53,6 +54,7 @@ export class MessageCreate {
 
                 // Process the message content as a reply to the bot itself.
                 if (repliedMessage && (message.author.id !== client.user?.id && repliedMessage.author.id === client.user?.id)) {
+                    if (!processQuery(message.content)) return;
                     await runGPT(message.content, message);
                     return;
                 }
@@ -61,21 +63,14 @@ export class MessageCreate {
                 if (!message.mentions.users.size || !message.mentions.has(`${client.user?.id}`)) return;
 
                 if (repliedMessage && (!repliedMessage.author.bot && message.author.id !== client.user?.id)) {
-                    // Check if the user has available queries.
-                    const check = await checkGptAvailability(message.author.id);
-
-                    if (typeof check === 'string') {
-                        // Replace pronouns and respond to the referenced message user's query status.
-                        await message.reply(check).then((msg) => messageDelete(msg, 6000, client));
-                        return;
-                    }
-
-                    // If the query limit is not reached, run GPT on the referenced message content.
+                    if (!processQuery(repliedMessage.content)) return;
+                    // Run GPT on the referenced message content.
                     await runGPT(repliedMessage.content, repliedMessage);
                     return;
                 }
 
                 // Process the current message if no referenced message is found or self-response is detected.
+                if (!processQuery(message.content)) return;
                 await runGPT(message.content, message);
                 return;
             } catch (e) {
@@ -86,6 +81,7 @@ export class MessageCreate {
         // Stop if no user was mentioned or if the mentioned user is not the bot.
         if (!message.mentions.users.size || !message.mentions.has(`${client.user?.id}`)) return;
 
+        if (!processQuery(message.content)) return;
         await runGPT(message.content, message);
 
         async function runGPT(cnt: string, msg: Message) {

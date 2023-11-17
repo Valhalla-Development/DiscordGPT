@@ -291,6 +291,11 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
     return true;
 }
 
+/**
+ * Processes a query by removing mentions of users in the format <@!userID>.
+ * @param query - The input query string that may contain user mentions.
+ * @returns Either the modified query string with user mentions removed or `false` if the modified string is empty.
+ */
 export const processQuery = (query: string) => {
     const modifiedStr = query.replaceAll(/<@!?(\d+)>/g, '');
     return modifiedStr.length > 0 ? modifiedStr : false;

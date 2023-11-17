@@ -84,7 +84,7 @@ export async function loadAssistant(
 ): Promise<string | Error> {
     const str = query.replaceAll(/<@!?(\d+)>/g, '');
 
-    if (!str.length || str.length <= 5) {
+    if (str.length <= 4) {
         return 'Please enter a valid query, with a minimum length of 5 characters.';
     }
 
@@ -290,3 +290,8 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
     );
     return true;
 }
+
+export const processQuery = (query: string) => {
+    const modifiedStr = query.replaceAll(/<@!?(\d+)>/g, '');
+    return modifiedStr.length > 0 ? modifiedStr : false;
+};

@@ -199,6 +199,7 @@ export class Queries {
             Number(1),
             db.whitelisted,
             db.blacklisted,
+            db.threadId,
         );
 
         if (msg) {
@@ -258,6 +259,7 @@ export class Queries {
                 Number(1),
                 !db.whitelisted,
                 false,
+                db.threadId,
             );
         } else {
             // User has no existing data. Creating a new entry.
@@ -268,6 +270,7 @@ export class Queries {
                 Number(1),
                 true,
                 false,
+                '',
             );
         }
 
@@ -328,6 +331,7 @@ export class Queries {
                 Number(1),
                 false,
                 !db.blacklisted,
+                db.threadId,
             );
         } else {
             // User has no existing data. Creating a new entry.
@@ -338,6 +342,7 @@ export class Queries {
                 Number(1),
                 false,
                 true,
+                '',
             );
         }
 

@@ -80,11 +80,16 @@ export async function getCommandIds(client: Client): Promise<{ [name: string]: s
 /**
  * Load Assistant function to query the OpenAI API for a response.
  * @param query - The user query to be sent to the Assistant.
+ * @param userId - This user id for the specified user.
  * @returns The response text from the Assistant.
  */
 export async function loadAssistant(
     query: string,
+    userId: string,
 ): Promise<string | Error> {
+    // Retrieve user's GPT query data from the database.
+    const userQueryData = await getGptQueryData(userId);
+
     const str = query.replaceAll(/<@!?(\d+)>/g, '');
 
     if (str.length <= 4) {
@@ -99,8 +104,30 @@ export async function loadAssistant(
         // Retrieve the Assistant information
         const assistant = await openai.beta.assistants.retrieve(`${process.env.AssistantId}`);
 
-        // Create a new thread
-        const thread = await openai.beta.threads.create();
+        // Fetch or create thread.
+        let thread: OpenAI.Beta.Threads.Thread;
+        try {
+            thread = userQueryData && userQueryData.threadId
+                ? await openai.beta.threads.retrieve(userQueryData.threadId)
+                : await openai.beta.threads.create();
+        } catch {
+            thread = await openai.beta.threads.create();
+        }
+
+        const {
+            totalQueries, queriesRemaining,
+            expiration, whitelisted, blacklisted,
+        } = userQueryData || {};
+
+        await setGptQueryData(
+            userId,
+            Number(totalQueries) || 0,
+            Number(queriesRemaining) || 0,
+            Number(expiration) || 0,
+            whitelisted || false,
+            blacklisted || false,
+            thread.id,
+        );
 
         // Add a user message to the thread
         await openai.beta.threads.messages.create(thread.id, {
@@ -162,6 +189,7 @@ export async function loadAssistant(
  * @param expiration - The expiration timestamp for the data.
  * @param whitelisted - The whitelist status for the user.
  * @param blacklisted - The blacklist status for the user.
+ * @param threadId - The thread id for the given user.
  * @returns A promise that resolves with the newly set data.
  */
 export async function setGptQueryData(
@@ -171,16 +199,17 @@ export async function setGptQueryData(
     expiration: number,
     whitelisted: boolean,
     blacklisted: boolean,
-): Promise<{ totalQueries: number; queriesRemaining: number; expiration: number; whitelisted: boolean; blacklisted: boolean }> {
+    threadId: string,
+): Promise<{ totalQueries: number; queriesRemaining: number; expiration: number; whitelisted: boolean; blacklisted: boolean; threadId: string }> {
     // Convert booleans to integers for SQLite storage
     const whitelistedInt = whitelisted ? 1 : 0;
     const blacklistedInt = blacklisted ? 1 : 0;
 
     await keyv.set(userId, {
-        totalQueries, queriesRemaining, expiration, whitelisted: whitelistedInt, blacklisted: blacklistedInt,
+        totalQueries, queriesRemaining, expiration, whitelisted: whitelistedInt, blacklisted: blacklistedInt, threadId,
     });
     return {
-        totalQueries, queriesRemaining, expiration, whitelisted, blacklisted,
+        totalQueries, queriesRemaining, expiration, whitelisted, blacklisted, threadId,
     };
 }
 
@@ -191,13 +220,14 @@ export async function setGptQueryData(
  */
 export async function getGptQueryData(
     userId: string,
-): Promise<{ totalQueries: number, queriesRemaining: number; expiration: number; whitelisted: boolean; blacklisted: boolean } | false> {
+): Promise<{ totalQueries: number,
+    queriesRemaining: number; expiration: number; whitelisted: boolean; blacklisted: boolean; threadId: string } | false> {
     const data = await keyv.get(userId);
 
     // If data exists, convert integer values to booleans and return
     if (data) {
         const {
-            totalQueries, queriesRemaining, expiration, whitelisted, blacklisted,
+            totalQueries, queriesRemaining, expiration, whitelisted, blacklisted, threadId,
         } = data;
         return {
             totalQueries,
@@ -205,6 +235,7 @@ export async function getGptQueryData(
             expiration,
             whitelisted: Boolean(whitelisted), // Convert 0 or 1 to boolean
             blacklisted: Boolean(blacklisted), // Convert 0 or 1 to boolean
+            threadId,
         };
     }
 
@@ -241,6 +272,7 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
                 Number(1),
                 userQueryData.whitelisted,
                 userQueryData.blacklisted,
+                userQueryData.threadId,
             );
             return true;
         }
@@ -258,6 +290,7 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
                     Number(expirationTime),
                     userQueryData.whitelisted,
                     userQueryData.blacklisted,
+                    userQueryData.threadId,
                 );
                 return true;
             }
@@ -278,6 +311,7 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
             Number(userQueryData.expiration),
             userQueryData.whitelisted,
             userQueryData.blacklisted,
+            userQueryData.threadId,
         );
         return true;
     }
@@ -290,6 +324,7 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
         Number(expirationTime),
         false,
         false,
+        '',
     );
     return true;
 }
@@ -313,7 +348,7 @@ export async function runGPT(
     if (typeof isGptAvailable === 'string') return isGptAvailable;
 
     // Load the Assistant for the message content
-    const response = await loadAssistant(content);
+    const response = await loadAssistant(content, userId);
 
     // Reply with the Assistant's response
     if (typeof response === 'string') return response;

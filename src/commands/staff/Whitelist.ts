@@ -76,6 +76,7 @@ export class Whitelist {
                 Number(1),
                 true,
                 false,
+                getDb ? getDb.threadId : '',
             );
             await interaction.reply({
                 content: '✅ User Whitelisted - The user has been successfully added to the whitelist.',
@@ -99,6 +100,7 @@ export class Whitelist {
                 Number(1),
                 false,
                 false,
+                getDb.threadId,
             );
             await interaction.reply({
                 content: '✅ User Removed - The user has been successfully removed from the whitelist.',

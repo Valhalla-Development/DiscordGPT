@@ -1,10 +1,7 @@
 import type { ArgsOf, Client } from 'discordx';
-import type { Message } from 'discord.js';
 import { Discord, On } from 'discordx';
-import { codeBlock, EmbedBuilder } from 'discord.js';
-import {
-    checkGptAvailability, messageDelete, loadAssistant, processQuery,
-} from '../utils/Util.js';
+import { EmbedBuilder } from 'discord.js';
+import { runGPT } from '../utils/Util.js';
 
 @Discord()
 export class MessageCreate {
@@ -28,94 +25,50 @@ export class MessageCreate {
             ]);
 
             await message.reply({ embeds: [embed] });
+            return;
         }
 
-        // Regex to match content less than or equal to 100, and ends with a question mark
-        const regex = /^.{5,100}\?$/;
+        // Function to check whether the bot should respond to the message.
+        const shouldRespond = () => {
+            const chance = Math.random();
+            const regex = /^.{5,100}\?$/;
+            return chance <= 0.04 && regex.test(message.content) && message.content.replaceAll(/<@!?(\d+)>/g, '').length;
+        };
 
-        // Respond to messages with a 15% chance if they end with a question mark and is less than 100 characters
-        const chance = Math.random();
-        if (chance <= 0.04) {
-            // Return if the query is a reply.
-            if (message.reference) return;
+        // Function to process GPT for a given content and user ID.
+        const processGPT = async (content: string, userId: string) => {
+            await message.channel?.sendTyping();
+            const response = await runGPT(content, userId);
+            await message.reply(response);
+        };
 
-            if (regex.test(message.content)) {
-                if (!processQuery(message.content)) return;
-                // Query AirRepsGPT
-                await runGPT(message.content, message);
-                return;
-            }
+        // Respond to the message if the conditions are met.
+        if (shouldRespond()) {
+            await processGPT(message.content, message.author.id);
+            return;
         }
 
-        // Trigger the GPT provider when pinging AirRepsGPT in a reply to another user.
+        // Process the message if it is a reply.
         if (message.reference) {
             try {
                 const repliedMessage = await message.channel.messages.fetch(`${message.reference.messageId}`);
+                if (!repliedMessage.content.replaceAll(/<@!?(\d+)>/g, '').length) return;
 
-                // Process the message content as a reply to the bot itself.
-                if (repliedMessage && (message.author.id !== client.user?.id && repliedMessage.author.id === client.user?.id)) {
-                    if (!processQuery(message.content)) return;
-                    await runGPT(message.content, message);
-                    return;
+                const isBotReply = repliedMessage.author.id === client.user?.id;
+
+                if (isBotReply && message.author.id !== client.user?.id) {
+                    await processGPT(message.content, message.author.id);
+                } else if (message.mentions.has(`${client.user?.id}`) && !message.author.bot) {
+                    await processGPT(repliedMessage.content, repliedMessage.author.id);
+                } else {
+                    await processGPT(message.content, message.author.id);
                 }
-
-                // Stop if no user was mentioned or if the mentioned user is not the bot.
-                if (!message.mentions.users.size || !message.mentions.has(`${client.user?.id}`)) return;
-
-                if (repliedMessage && (!repliedMessage.author.bot && message.author.id !== client.user?.id)) {
-                    // Run GPT on the referenced message content.
-                    await runGPT(repliedMessage.content, repliedMessage);
-                    return;
-                }
-
-                // Process the current message if no referenced message is found or self-response is detected.
-                if (!processQuery(message.content)) return;
-                await runGPT(message.content, message);
-                return;
             } catch (e) {
                 console.error('Error fetching or processing the replied message:', e);
             }
-        }
-
-        // Stop if no user was mentioned or if the mentioned user is not the bot.
-        if (!message.mentions.users.size || !message.mentions.has(`${client.user?.id}`)) return;
-
-        if (!processQuery(message.content)) return;
-        await runGPT(message.content, message);
-
-        async function runGPT(cnt: string, msg: Message) {
-            try {
-                // Check if the user has available queries.
-                const check = await checkGptAvailability(message.author?.id);
-                if (typeof check === 'string') {
-                    await message.reply(check).then((ms) => messageDelete(ms, 6000, client));
-                    return;
-                }
-
-                if (!check) {
-                    await message.reply({ content: 'You are currently blacklisted. If you believe this is a mistake, please contact a moderator.' }).then(async (m) => {
-                        messageDelete(m, 6000, client);
-                        messageDelete(message, 6000, client);
-                    });
-                    return;
-                }
-
-                await message.channel.sendTyping();
-
-                // Load the Assistant for the message content
-                const res = await loadAssistant(client, message, cnt);
-
-                // Reply with the Assistant's response
-                if (typeof res === 'string') {
-                    await msg.reply(res);
-                } else {
-                    await msg.reply({ content: `An error occurred, please report this to a member of our moderation team.\n${codeBlock('ts', `${res}`)}` });
-                }
-            } catch (e) {
-                // Send an error message and log the error
-                await msg.reply({ content: `An error occurred, please report this to a member of our moderation team.\n${codeBlock('ts', `${e}`)}` });
-                console.error(e);
-            }
+        } else if (message.mentions.has(`${client.user?.id}`)) {
+            // Process the message if the bot is mentioned.
+            await processGPT(message.content, message.author.id);
         }
     }
 }

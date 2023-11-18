@@ -29,7 +29,7 @@ export class Ask {
 
         await interaction.deferReply();
 
-        const response = await runGPT(query, interaction.user.id);
+        const response = await runGPT(query, interaction.user);
 
         await interaction.editReply({ content: response });
     }

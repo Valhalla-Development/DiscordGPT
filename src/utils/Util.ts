@@ -1,5 +1,5 @@
 import {
-    codeBlock, CommandInteraction, PermissionsBitField, Message,
+    codeBlock, CommandInteraction, PermissionsBitField, Message, User,
 } from 'discord.js';
 import type { Client } from 'discordx';
 import type { MessageContentText } from 'openai/resources/beta/threads';
@@ -80,15 +80,15 @@ export async function getCommandIds(client: Client): Promise<{ [name: string]: s
 /**
  * Load Assistant function to query the OpenAI API for a response.
  * @param query - The user query to be sent to the Assistant.
- * @param userId - This user id for the specified user.
+ * @param user - The User for the target.
  * @returns The response text from the Assistant.
  */
 export async function loadAssistant(
     query: string,
-    userId: string,
-): Promise<string | Error> {
+    user: User,
+): Promise<string | Error | void> {
     // Retrieve user's GPT query data from the database.
-    const userQueryData = await getGptQueryData(userId);
+    const userQueryData = await getGptQueryData(user.id);
 
     const str = query.replaceAll(/<@!?(\d+)>/g, '');
 
@@ -120,7 +120,7 @@ export async function loadAssistant(
         } = userQueryData || {};
 
         await setGptQueryData(
-            userId,
+            user.id,
             Number(totalQueries) || 0,
             Number(queriesRemaining) || 0,
             Number(expiration) || 0,
@@ -138,6 +138,7 @@ export async function loadAssistant(
         // Create a run with the Assistant
         const createRun = await openai.beta.threads.runs.create(thread.id, {
             assistant_id: assistant.id,
+            instructions: `Please address this user as ${user.globalName}`,
         });
 
         let retrieve = await openai.beta.threads.runs.retrieve(thread.id, createRun.id);
@@ -332,7 +333,7 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
 /**
  * Runs the GPT assistant for the specified user and content.
  * @param content - The content for the GPT assistant.
- * @param userId - This user id for the specified user.
+ * @param user - The User object for target.
  * @returns A promise that resolves to an object with content and success properties.
  * - `content`: The response content from the GPT assistant.
  * - `success`: A boolean indicating whether the operation was successful.
@@ -340,15 +341,15 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
  */
 export async function runGPT(
     content: string,
-    userId: string,
+    user: User,
 ): Promise<string> {
     // Check if the user has available queries.
-    const isGptAvailable = await checkGptAvailability(userId);
+    const isGptAvailable = await checkGptAvailability(user.id);
 
     if (typeof isGptAvailable === 'string') return isGptAvailable;
 
     // Load the Assistant for the message content
-    const response = await loadAssistant(content, userId);
+    const response = await loadAssistant(content, user);
 
     // Reply with the Assistant's response
     if (typeof response === 'string') return response;

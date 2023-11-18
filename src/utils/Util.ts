@@ -1,5 +1,6 @@
-import type { Message } from 'discord.js';
-import { CommandInteraction, PermissionsBitField } from 'discord.js';
+import {
+    codeBlock, CommandInteraction, PermissionsBitField, Message,
+} from 'discord.js';
 import type { Client } from 'discordx';
 import type { MessageContentText } from 'openai/resources/beta/threads';
 import 'colors';
@@ -20,24 +21,30 @@ export function capitalise(string: string): string {
 
 /**
  * Checks if a message is deletable, and deletes it after a specified amount of time.
- * @param message - The message to check.
- * @param time - The amount of time to wait before deleting the message, in milliseconds.
+ * @param interaction - The message to check.
+ * @param delay - The amount of time to wait before deleting the message, in milliseconds.
  * @param client - The Discord Client instance.
  * @returns void
  */
-export function messageDelete(message: Message, time: number, client: Client): void {
+export function messageDelete(interaction: Message | CommandInteraction, delay: number, client: Client): void {
+    const user = interaction instanceof Message ? interaction.author : interaction.user;
+    const deleteFunction = interaction instanceof Message ? interaction.delete : interaction.deleteReply;
+
     setTimeout(async () => {
-        if (message.author.id !== client.user?.id
-            && !message.member?.guild.members.me?.permissions.has(PermissionsBitField.Flags.ManageMessages)) return;
+        if (user.id !== client.user?.id
+            || !interaction.guild?.members.me?.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
+            return;
+        }
 
         try {
-            if (message && message.deletable) {
-                await message.delete();
+            if (interaction) {
+                await deleteFunction();
             }
         } catch (error) {
-            // Do nothing with the error
+            // Handle the error gracefully, log it, or perform any necessary actions
+            console.error('Error deleting message:', error);
         }
-    }, time);
+    }, delay);
 }
 
 /**
@@ -72,20 +79,16 @@ export async function getCommandIds(client: Client): Promise<{ [name: string]: s
 
 /**
  * Load Assistant function to query the OpenAI API for a response.
- * @param client - The Discord client.
- * @param message - The message interaction.
  * @param query - The user query to be sent to the Assistant.
  * @returns The response text from the Assistant.
  */
 export async function loadAssistant(
-    client: Client,
-    message: Message | CommandInteraction,
     query: string,
 ): Promise<string | Error> {
     const str = query.replaceAll(/<@!?(\d+)>/g, '');
 
     if (str.length <= 4) {
-        return 'Please enter a valid query, with a minimum length of 5 characters.';
+        return 'Please enter a valid query, with a minimum length of 4 characters.';
     }
 
     try {
@@ -227,7 +230,7 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
     // User's query data exists.
     if (userQueryData) {
         // If the user is blacklisted
-        if (userQueryData.blacklisted) return false;
+        if (userQueryData.blacklisted) return 'You are currently blacklisted. If you believe this is a mistake, please contact a moderator.';
 
         // If the user is whitelisted
         if (userQueryData.whitelisted) {
@@ -264,7 +267,7 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
             const epochTime = Math.floor(Number(expiration) / 1000);
 
             // Return a string indicating the reset time of available queries
-            return `Looks like you've reached your query limit for now. Don't worry, your queries will reset in: <t:${epochTime}:R>.`;
+            return `Looks like you've reached your query limit for now. Don't worry, your queries will reset in <t:${epochTime}:R>`;
         }
 
         // User has queries remaining, remove 1 query from the database.
@@ -292,11 +295,29 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
 }
 
 /**
- * Processes a query by removing mentions of users in the format <@!userID>.
- * @param query - The input query string that may contain user mentions.
- * @returns Either the modified query string with user mentions removed or `false` if the modified string is empty.
+ * Runs the GPT assistant for the specified user and content.
+ * @param content - The content for the GPT assistant.
+ * @param userId - This user id for the specified user.
+ * @returns A promise that resolves to an object with content and success properties.
+ * - `content`: The response content from the GPT assistant.
+ * - `success`: A boolean indicating whether the operation was successful.
+ * @throws An error if there is an issue with the GPT assistant or user queries.
  */
-export const processQuery = (query: string) => {
-    const modifiedStr = query.replaceAll(/<@!?(\d+)>/g, '');
-    return modifiedStr.length > 0 ? modifiedStr : false;
-};
+export async function runGPT(
+    content: string,
+    userId: string,
+): Promise<string> {
+    // Check if the user has available queries.
+    const isGptAvailable = await checkGptAvailability(userId);
+
+    if (typeof isGptAvailable === 'string') return isGptAvailable;
+
+    // Load the Assistant for the message content
+    const response = await loadAssistant(content);
+
+    // Reply with the Assistant's response
+    if (typeof response === 'string') return response;
+
+    // Response was not a string, therefore, is an error
+    return `An error occurred, please report this to a member of our moderation team.\n${codeBlock('ts', `${response}`)}`;
+}

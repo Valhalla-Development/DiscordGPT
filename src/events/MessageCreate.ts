@@ -1,6 +1,6 @@
 import type { ArgsOf, Client } from 'discordx';
 import { Discord, On } from 'discordx';
-import { EmbedBuilder, User } from 'discord.js';
+import { EmbedBuilder } from 'discord.js';
 import { runGPT } from '../utils/Util.js';
 
 @Discord()
@@ -36,15 +36,15 @@ export class MessageCreate {
         };
 
         // Function to process GPT for a given content and user ID.
-        const processGPT = async (content: string, user: User) => {
+        const processGPT = async (content: string, userId: string) => {
             await message.channel?.sendTyping();
-            const response = await runGPT(content, user);
+            const response = await runGPT(content, userId);
             await message.reply(response);
         };
 
         // Respond to the message if the conditions are met.
         if (shouldRespond()) {
-            await processGPT(message.content, message.author);
+            await processGPT(message.content, message.author.id);
             return;
         }
 
@@ -57,16 +57,16 @@ export class MessageCreate {
                 const isBotReply = repliedMessage.author.id === client.user?.id;
 
                 if (isBotReply && message.author.id !== client.user?.id) {
-                    await processGPT(message.content, message.author);
+                    await processGPT(message.content, message.author.id);
                 } else if (message.mentions.has(`${client.user?.id}`) && !message.author.bot) {
-                    await processGPT(repliedMessage.content, repliedMessage.author);
+                    await processGPT(repliedMessage.content, repliedMessage.author.id);
                 }
             } catch (e) {
                 console.error('Error fetching or processing the replied message:', e);
             }
         } else if (message.mentions.has(`${client.user?.id}`)) {
             // Process the message if the bot is mentioned.
-            await processGPT(message.content, message.author);
+            await processGPT(message.content, message.author.id);
         }
     }
 }

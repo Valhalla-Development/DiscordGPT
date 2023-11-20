@@ -356,3 +356,39 @@ export async function runGPT(
     // Response was not a string, therefore, is an error
     return `An error occurred, please report this to a member of our moderation team.\n${codeBlock('ts', `${response}`)}`;
 }
+
+/**
+ * Splits a given content string into chunks of a specified size, ensuring words are not cut.
+ * Each chunk is appended with a page number and the total number of chunks.
+ * @param content - The input string to be split.
+ * @param length - The desired length of each chunk.
+ * @returns A promise resolving to an array of strings representing the split content.
+ */
+export async function splitMessages(content: string, length: number): Promise<string[]> {
+    let remainingContent = content;
+    const chunks: string[] = [];
+
+    // Calculate the total number of chunks
+    const totalChunks = Math.ceil(content.length / length);
+
+    // Split the response into chunks of length characters without cutting words
+    while (remainingContent.length > 0) {
+        let chunk = remainingContent.substring(0, length);
+
+        // Check if the chunk ends in the middle of a word
+        const lastSpaceIndex = chunk.lastIndexOf(' ');
+        if (lastSpaceIndex !== -1) {
+            chunk = chunk.substring(0, lastSpaceIndex);
+            remainingContent = remainingContent.substring(lastSpaceIndex + 1);
+        } else {
+            // If no space is found, take the entire chunk
+            remainingContent = remainingContent.substring(length);
+        }
+
+        const pageNumber = chunks.length + 1;
+        const numberedChunk = `${chunk}\n\`${pageNumber}\`/\`${totalChunks}\``;
+        chunks.push(numberedChunk);
+    }
+
+    return chunks;
+}

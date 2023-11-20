@@ -43,7 +43,11 @@ export class Whitelist {
     ) {
         if (!interaction.channel) return;
 
-        if (interaction.user.id === user.id) {
+        // Check if command was executed by an admin defined in the environment variable.
+        const adminIds = process.env.AdminIds?.split(',');
+        const isAdmin = adminIds?.some((id) => id === interaction.user.id);
+
+        if (interaction.user.id === user.id && !isAdmin) {
             await interaction.reply({
                 content: '⚠️ You can\'t perform this action on yourself',
                 ephemeral: true,
@@ -55,10 +59,6 @@ export class Whitelist {
 
         // Fetch the user's data
         const getDb = await getGptQueryData(user.id);
-
-        // Check if command was executed by an admin defined in the environment variable.
-        const adminIds = process.env.AdminIds?.split(',');
-        const isAdmin = adminIds?.some((id) => id === interaction.user.id);
 
         if ((option === 'add' || option === 'remove') && !isAdmin) {
             await interaction.reply({

@@ -116,18 +116,20 @@ export async function loadAssistant(
 
         const {
             totalQueries, queriesRemaining,
-            expiration, whitelisted, blacklisted,
+            expiration, whitelisted, blacklisted, threadId,
         } = userQueryData || {};
 
-        await setGptQueryData(
-            user.id,
-            Number(totalQueries) || 0,
-            Number(queriesRemaining) || 0,
-            Number(expiration) || 0,
-            whitelisted || false,
-            blacklisted || false,
-            thread.id,
-        );
+        if (threadId && threadId !== thread.id) {
+            await setGptQueryData(
+                user.id,
+                Number(totalQueries) || 0,
+                Number(queriesRemaining) || 0,
+                Number(expiration) || 0,
+                whitelisted || false,
+                blacklisted || false,
+                thread.id,
+            );
+        }
 
         // Add a user message to the thread
         await openai.beta.threads.messages.create(thread.id, {

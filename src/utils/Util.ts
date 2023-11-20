@@ -86,7 +86,7 @@ export async function getCommandIds(client: Client): Promise<{ [name: string]: s
 export async function loadAssistant(
     query: string,
     user: User,
-): Promise<string | string[] | Error> {
+): Promise<string | string[] | Error | boolean> {
     // Retrieve user's GPT query data from the database.
     const userQueryData = await getGptQueryData(user.id);
 
@@ -130,6 +130,18 @@ export async function loadAssistant(
                 thread.id,
             );
         }
+
+        // This section check if the user has an existing run.
+        let existingRun = false;
+
+        try {
+            const response = await openai.beta.threads.runs.list(thread.id);
+            existingRun = ['queued', 'in_progress'].includes(response?.data?.[0]?.status) || false;
+        } catch {
+            existingRun = false;
+        }
+
+        if (existingRun) return true;
 
         // Add a user message to the thread
         await openai.beta.threads.messages.create(thread.id, {
@@ -355,7 +367,7 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
 export async function runGPT(
     content: string,
     user: User,
-): Promise<string[] | string> {
+): Promise<string[] | string | boolean> {
     // Check if the user has available queries.
     const isGptAvailable = await checkGptAvailability(user.id);
 
@@ -363,6 +375,9 @@ export async function runGPT(
 
     // Load the Assistant for the message content
     const response = await loadAssistant(content, user);
+
+    // If the typeof response is boolean and true, the user already has an ongoing prompt.
+    if (typeof response === 'boolean') return true;
 
     // Reply with the Assistant's response
     if (typeof response === 'string') return response;

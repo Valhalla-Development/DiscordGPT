@@ -43,6 +43,14 @@ export class Whitelist {
     ) {
         if (!interaction.channel) return;
 
+        if (interaction.user.id === user.id) {
+            await interaction.reply({
+                content: '⚠️ You can\'t perform this action on yourself',
+                ephemeral: true,
+            });
+            return;
+        }
+
         const { RateLimit } = process.env;
 
         // Fetch the user's data

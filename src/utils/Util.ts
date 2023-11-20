@@ -80,7 +80,7 @@ export async function getCommandIds(client: Client): Promise<{ [name: string]: s
 /**
  * Load Assistant function to query the OpenAI API for a response.
  * @param query - The user query to be sent to the Assistant.
- * @param user - The User for the target..
+ * @param user - The User for the target.
  * @returns The response text from the Assistant.
  */
 export async function loadAssistant(
@@ -132,7 +132,7 @@ export async function loadAssistant(
         }
 
         // This section check if the user has an existing run.
-        let existingRun = false;
+        let existingRun;
 
         try {
             const response = await openai.beta.threads.runs.list(thread.id);

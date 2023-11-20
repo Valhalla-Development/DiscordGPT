@@ -29,8 +29,16 @@ export class Ask {
 
         await interaction.deferReply();
 
-        const response = await runGPT(query, interaction.user.id);
+        const response = await runGPT(query, interaction.user);
 
-        await interaction.editReply({ content: response });
+        // If response is an array of responses
+        if (Array.isArray(response)) {
+            // Edit the first message
+            const msg = await interaction.editReply({ content: response[0] });
+            await msg.reply({ content: response[1] });
+        } else {
+            // If the response is a string, send a single message
+            await interaction.editReply({ content: response });
+        }
     }
 }

@@ -1,4 +1,6 @@
-import { Discord, Slash, SlashOption } from 'discordx';
+import {
+    Client, Discord, Slash, SlashOption,
+} from 'discordx';
 import type { CommandInteraction } from 'discord.js';
 import { ApplicationCommandOptionType } from 'discord.js';
 import { Category } from '@discordx/utilities';
@@ -11,6 +13,7 @@ export class Ask {
      * Query the AirRepsGPT model
      * @param query - The query for AirRepsGPT
      * @param interaction - The command interaction.
+     * @param client - The Discord client.
      */
     @Slash({ description: 'Query the AirRepsGPT model' })
     async ask(
@@ -24,19 +27,25 @@ export class Ask {
         })
             query: string,
             interaction: CommandInteraction,
+            client: Client,
     ) {
         if (!interaction.channel) return;
 
-        await interaction.deferReply();
-
         const response = await runGPT(query, interaction.user);
+
+        // If the response is boolean and true, then the user already has an ongoing query
+        if (typeof response === 'boolean' && response) {
+            return interaction.reply({ content: `You currently have an ongoing request. Please refrain from sending additional queries to avoid spamming ${client?.user}`, ephemeral: true });
+        }
+
+        await interaction.deferReply();
 
         // If response is an array of responses
         if (Array.isArray(response)) {
             // Edit the first message
             const msg = await interaction.editReply({ content: response[0] });
             await msg.reply({ content: response[1] });
-        } else {
+        } else if (typeof response === 'string') {
             // If the response is a string, send a single message
             await interaction.editReply({ content: response });
         }

@@ -40,12 +40,17 @@ export class MessageCreate {
             await message.channel?.sendTyping();
             const response = await runGPT(content, user);
 
+            // If the response is boolean and true, then the user already has an ongoing query
+            if (typeof response === 'boolean' && response) {
+                return message.reply({ content: `You currently have an ongoing request. Please refrain from sending additional queries to avoid spamming ${client?.user}` });
+            }
+
             // If response is an array of responses
             if (Array.isArray(response)) {
                 // Edit the first message
                 const msg = await message.reply({ content: response[0] });
                 await msg.reply({ content: response[1] });
-            } else {
+            } else if (typeof response === 'string') {
                 // If the response is a string, send a single message
                 await message.reply({ content: response });
             }

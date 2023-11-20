@@ -86,7 +86,7 @@ export async function getCommandIds(client: Client): Promise<{ [name: string]: s
 export async function loadAssistant(
     query: string,
     user: User,
-): Promise<string | Error> {
+): Promise<string | string[] | Error> {
     // Retrieve user's GPT query data from the database.
     const userQueryData = await getGptQueryData(user.id);
 
@@ -176,6 +176,18 @@ export async function loadAssistant(
 
         // Extract text value from the Assistant's response
         const textValue = (messages.data[0].content[0] as MessageContentText)?.text?.value;
+
+        // If the length of the text is greater than the desired target and does not exceed a desired target
+        // then proceed to split the response into an array of messages
+        if (textValue.length >= 1950) {
+            if (textValue.length >= 3900) return new Error('Response exceeded length of 4000. Please report this to a member of staff');
+
+            const split = await splitMessages(textValue, 1950);
+            // If split is not an array, return the error
+            if (!Array.isArray(split)) return split;
+        }
+
+        // Length does not exceed the desired target, return string
         return textValue.replaceAll(/【.*?】/g, '');
     } catch (error) {
         console.error(error);
@@ -366,7 +378,7 @@ export async function runGPT(
  * @param length - The desired length of each chunk.
  * @returns A promise resolving to an array of strings representing the split content.
  */
-export async function splitMessages(content: string, length: number): Promise<string[]> {
+export async function splitMessages(content: string, length: number): Promise<string[] | Error> {
     let remainingContent = content;
     const chunks: string[] = [];
 
@@ -392,5 +404,6 @@ export async function splitMessages(content: string, length: number): Promise<st
         chunks.push(numberedChunk);
     }
 
+    if (chunks.length >= 2) throw new Error('Split Message array was greater than or equal to 2.');
     return chunks;
 }

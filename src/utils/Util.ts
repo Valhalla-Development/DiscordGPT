@@ -404,6 +404,6 @@ export async function splitMessages(content: string, length: number): Promise<st
         chunks.push(numberedChunk);
     }
 
-    if (chunks.length >= 2) throw new Error('Split Message array was greater than or equal to 2.');
+    if (chunks.length > 2) throw new Error('Split Message array was greater than or equal to 2.');
     return chunks;
 }

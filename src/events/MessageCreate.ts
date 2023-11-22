@@ -1,6 +1,8 @@
 import type { ArgsOf, Client } from 'discordx';
 import { Discord, On } from 'discordx';
-import { codeBlock, EmbedBuilder, User } from 'discord.js';
+import {
+    codeBlock, EmbedBuilder, Message, User,
+} from 'discord.js';
 import { runGPT } from '../utils/Util.js';
 
 @Discord()
@@ -47,7 +49,7 @@ export class MessageCreate {
         };
 
         // Function to process GPT for a given content and user ID.
-        const processGPT = async (content: string, user: User) => {
+        const processGPT = async (content: string, user: User, msg: Message) => {
             await message.channel?.sendTyping();
             const response = await runGPT(content, user);
 
@@ -66,17 +68,17 @@ export class MessageCreate {
             // If response is an array of responses
             if (Array.isArray(response)) {
                 // Edit the first message
-                const msg = await message.reply({ content: response[0] });
-                await msg.reply({ content: response[1] });
+                const initialMessage = await message.reply({ content: response[0] });
+                await initialMessage.reply({ content: response[1] });
             } else if (typeof response === 'string') {
                 // If the response is a string, send a single message
-                await message.reply({ content: response });
+                await msg.reply({ content: response });
             }
         };
 
         // Respond to the message if the conditions are met.
         if (shouldRespond()) {
-            await processGPT(message.content, message.author);
+            await processGPT(message.content, message.author, message);
             return;
         }
 
@@ -89,16 +91,16 @@ export class MessageCreate {
                 const isBotReply = repliedMessage.author.id === client.user?.id;
 
                 if (isBotReply && message.author.id !== client.user?.id) {
-                    await processGPT(message.content, message.author);
+                    await processGPT(message.content, message.author, message);
                 } else if (message.mentions.has(`${client.user?.id}`) && !message.author.bot) {
-                    await processGPT(repliedMessage.content, repliedMessage.author);
+                    await processGPT(repliedMessage.content, repliedMessage.author, repliedMessage);
                 }
             } catch (e) {
                 console.error('Error fetching or processing the replied message:', e);
             }
         } else if (message.mentions.has(`${client.user?.id}`)) {
             // Process the message if the bot is mentioned.
-            await processGPT(message.content, message.author);
+            await processGPT(message.content, message.author, message);
         }
     }
 }

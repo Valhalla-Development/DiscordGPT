@@ -29,11 +29,13 @@ export class Ask {
             interaction: CommandInteraction,
             client: Client,
     ) {
+        await interaction.deferReply();
+
         const response = await runGPT(query, interaction.user);
 
         // If the response is boolean and true, then the user already has an ongoing query
         if (typeof response === 'boolean' && response) {
-            return interaction.reply({ content: `You currently have an ongoing request. Please refrain from sending additional queries to avoid spamming ${client?.user}`, ephemeral: true });
+            return interaction.reply({ content: `You currently have an ongoing request. Please refrain from sending additional queries to avoid spamming ${client?.user}` });
         }
 
         if (response === query.replaceAll(/<@!?(\d+)>/g, '')) {
@@ -42,8 +44,6 @@ export class Ask {
                 ${codeBlock('js', 'Error: Response was equal to query.')}`,
             });
         }
-
-        await interaction.deferReply();
 
         // If response is an array of responses
         if (Array.isArray(response)) {

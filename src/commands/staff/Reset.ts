@@ -1,7 +1,4 @@
-import {
-    Client,
-    Discord, Slash, SlashOption,
-} from 'discordx';
+import { Discord, Slash, SlashOption } from 'discordx';
 import type { CommandInteraction } from 'discord.js';
 import {
     ApplicationCommandOptionType, GuildMember, PermissionsBitField,

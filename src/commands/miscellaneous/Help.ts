@@ -100,7 +100,7 @@ export class Help {
 
         // Return if no value is selected
         if (!selectedValue) {
-            return messageDelete(interaction.message, 0, client);
+            return messageDelete(interaction.message, 0);
         }
 
         // Extract the category from the selected value

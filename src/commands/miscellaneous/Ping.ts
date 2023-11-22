@@ -17,7 +17,7 @@ export class Ping {
     async ping(interaction: CommandInteraction, client: Client): Promise<void> {
         const msg = await interaction.channel!.send({ content: 'Pinging...' });
         const latency = msg.createdTimestamp - interaction.createdTimestamp;
-        messageDelete(msg, 0, client);
+        messageDelete(msg, 0);
 
         const embed = new EmbedBuilder().setColor('#EC645D').addFields([
             {

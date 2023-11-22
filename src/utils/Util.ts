@@ -21,24 +21,15 @@ export function capitalise(string: string): string {
 
 /**
  * Checks if a message is deletable, and deletes it after a specified amount of time.
- * @param interaction - The message to check.
+ * @param message - The message to check.
  * @param delay - The amount of time to wait before deleting the message, in milliseconds.
- * @param client - The Discord Client instance.
  * @returns void
  */
-export function messageDelete(interaction: Message | CommandInteraction, delay: number, client: Client): void {
-    const user = interaction instanceof Message ? interaction.author : interaction.user;
-    const deleteFunction = interaction instanceof Message ? interaction.delete : interaction.deleteReply;
-
+export function messageDelete(message: Message, delay: number): void {
     setTimeout(async () => {
-        if (user.id !== client.user?.id
-            || !interaction.guild?.members.me?.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
-            return;
-        }
-
         try {
-            if (interaction) {
-                await deleteFunction();
+            if (message && message.deletable) {
+                await message.delete();
             }
         } catch (error) {
             // Handle the error gracefully, log it, or perform any necessary actions

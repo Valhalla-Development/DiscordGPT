@@ -10,15 +10,15 @@ import { runGPT } from '../../utils/Util.js';
 @Category('Miscellaneous')
 export class Ask {
     /**
-     * Query the AirRepsGPT model
-     * @param query - The query for AirRepsGPT
+     * Query the DiscordGPT model
+     * @param query - The query for DiscordGPT
      * @param interaction - The command interaction.
      * @param client - The Discord client.
      */
-    @Slash({ description: 'Query the AirRepsGPT model' })
+    @Slash({ description: 'Query the DiscordGPT model' })
     async ask(
         @SlashOption({
-            description: 'Query the AirRepsGPT',
+            description: 'Query the DiscordGPT',
             name: 'query',
             required: true,
             type: ApplicationCommandOptionType.String,

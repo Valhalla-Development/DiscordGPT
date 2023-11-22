@@ -30,9 +30,20 @@ export class MessageCreate {
 
         // Function to check whether the bot should respond to the message.
         const shouldRespond = () => {
+            // Check if the channel is excluded
+            const excludedChannels = process.env.ExcludedChannels ? process.env.ExcludedChannels.split(',') : [];
+            if (excludedChannels.includes(message.channel.id)) {
+                return false;
+            }
+
+            // Check other conditions
             const chance = Math.random();
             const regex = /^.{5,100}\?$/;
-            return chance <= 0.04 && regex.test(message.content) && message.content.replaceAll(/<@!?(\d+)>/g, '').length;
+            return (
+                chance <= 0.04
+                && regex.test(message.content)
+                && message.content.replaceAll(/<@!?(\d+)>/g, '').length
+            );
         };
 
         // Function to process GPT for a given content and user ID.

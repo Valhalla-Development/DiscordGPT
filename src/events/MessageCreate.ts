@@ -20,7 +20,7 @@ export class MessageCreate {
             const embed = new EmbedBuilder().setColor('#EC645D').addFields([
                 {
                     name: `**${client.user?.username}**`,
-                    value: `To better assist you, please use our bot within the [${process.env.ProjectName} Discord server](${process.env.SupportInvite}).\nHead over there for a seamless experience. See you on the server!`,
+                    value: `To better assist you, please use our bot within the [${process.env.ProjectName} Discord server](${process.env.ProjectSupportInvite}).\nHead over there for a seamless experience. See you on the server!`,
                 },
             ]);
 

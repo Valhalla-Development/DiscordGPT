@@ -1,6 +1,6 @@
 # DiscordGPT
 
-<div style="text-align: center;">
+<div align="center">
   <a href="https://discord.gg/Q3ZhdRJ">
     <img src="https://img.shields.io/discord/495602800802398212.svg?colorB=Blue&logo=discord&label=Support&style=for-the-badge" alt="Support">
   </a>
@@ -70,5 +70,7 @@ Screenshots related to the features mentioned on this page:
   </br><img src="https://valhalladev.org/wilbur/error.png" alt="Error Handler" style="width: 300px;">
 - **Command Logging**
   </br><img src="https://valhalladev.org/wilbur/command.png" alt="Command Logger" style="width: 400px;">
-- **Help Command**
-  </br><img src="https://valhalladev.org/wilbur/help.png" alt="Help" style="width: 400px;">
+- **Help Misc Command**
+  </br><img src="https://valhalladev.org/discordgpt/help1.png" alt="Help" style="width: 400px;">
+- **Help Staff Command**
+  </br><img src="https://valhalladev.org/discordgpt/help2.png" alt="Help" style="width: 400px;">

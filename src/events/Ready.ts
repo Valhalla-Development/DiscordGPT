@@ -2,7 +2,7 @@ import type { Client } from 'discordx';
 import { Discord, Once } from 'discordx';
 import si from 'systeminformation';
 import 'colors';
-import { ActivityType } from 'discord.js';
+import { ActivityType, version } from 'discord.js';
 
 /**
  * Discord.js Ready event handler.
@@ -49,7 +49,7 @@ export class Ready {
         );
         console.log(
             'Invite:'.white.bold,
-            `https://discordapp.com/oauth2/authorize?client_id=${client.user?.id}&scope=bot%20applications.commands&permissions=535327927376`.blue.underline.bold,
+            `https://discordapp.com/oauth2/authorize?client_id=${client.user?.id}&scope=bot%20applications.commands&permissions=277025459200`.blue.underline.bold,
         );
 
         // Bot Specs
@@ -72,7 +72,7 @@ export class Ready {
         );
         console.log(
             'Discord.js Version:'.white.bold,
-            `${process.env.npm_package_dependencies_discord_js?.substring(1)}`.green.bold,
+            `${version}`.green.bold,
         );
         console.log(
             `${client.user?.username} Version:`.white.bold,

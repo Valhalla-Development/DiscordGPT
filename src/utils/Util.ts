@@ -1,5 +1,5 @@
 import {
-    codeBlock, CommandInteraction, PermissionsBitField, Message, User,
+    codeBlock, Message, User,
 } from 'discord.js';
 import type { Client } from 'discordx';
 import type { MessageContentText } from 'openai/resources/beta/threads';

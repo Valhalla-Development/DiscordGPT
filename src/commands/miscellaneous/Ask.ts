@@ -2,7 +2,7 @@ import {
     Client, Discord, Slash, SlashOption,
 } from 'discordx';
 import type { CommandInteraction } from 'discord.js';
-import { ApplicationCommandOptionType } from 'discord.js';
+import { ApplicationCommandOptionType, codeBlock } from 'discord.js';
 import { Category } from '@discordx/utilities';
 import { runGPT } from '../../utils/Util.js';
 
@@ -36,6 +36,13 @@ export class Ask {
         // If the response is boolean and true, then the user already has an ongoing query
         if (typeof response === 'boolean' && response) {
             return interaction.reply({ content: `You currently have an ongoing request. Please refrain from sending additional queries to avoid spamming ${client?.user}`, ephemeral: true });
+        }
+
+        if (response === query.replaceAll(/<@!?(\d+)>/g, '')) {
+            return interaction.reply({
+                content: `An error occurred, please report this to a member of our moderation team.\n
+                ${codeBlock('js', 'Error: Reponse was equal to query.')}`,
+            });
         }
 
         await interaction.deferReply();

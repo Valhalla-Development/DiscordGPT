@@ -1,6 +1,6 @@
 import type { ArgsOf, Client } from 'discordx';
 import { Discord, On } from 'discordx';
-import { EmbedBuilder, User } from 'discord.js';
+import { codeBlock, EmbedBuilder, User } from 'discord.js';
 import { runGPT } from '../utils/Util.js';
 
 @Discord()
@@ -43,6 +43,13 @@ export class MessageCreate {
             // If the response is boolean and true, then the user already has an ongoing query
             if (typeof response === 'boolean' && response) {
                 return message.reply({ content: `You currently have an ongoing request. Please refrain from sending additional queries to avoid spamming ${client?.user}` });
+            }
+
+            if (response === content.replaceAll(/<@!?(\d+)>/g, '')) {
+                return message.reply({
+                    content: `An error occurred, please report this to a member of our moderation team.\n
+                ${codeBlock('js', 'Error: Reponse was equal to query.')}`,
+                });
             }
 
             // If response is an array of responses

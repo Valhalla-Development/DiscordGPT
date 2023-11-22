@@ -334,7 +334,7 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
             userId,
             Number(userQueryData.totalQueries) + Number(1),
             Number(userQueryData.queriesRemaining) - Number(1),
-            Number(userQueryData.expiration),
+            Number(userQueryData.expiration) === 1 ? Number(expirationTime) : Number(userQueryData.expiration),
             userQueryData.whitelisted,
             userQueryData.blacklisted,
             userQueryData.threadId,

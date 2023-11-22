@@ -1,10 +1,10 @@
 import {
     Client,
-    Discord, Slash, SlashChoice, SlashOption,
+    Discord, Slash, SlashOption,
 } from 'discordx';
 import type { CommandInteraction } from 'discord.js';
 import {
-    ApplicationCommandOptionType, EmbedBuilder, GuildMember, PermissionsBitField,
+    ApplicationCommandOptionType, GuildMember, PermissionsBitField,
 } from 'discord.js';
 import { Category } from '@discordx/utilities';
 import { getGptQueryData, setGptQueryData } from '../../utils/Util.js';
@@ -32,7 +32,6 @@ export class Reset {
             user: GuildMember,
 
             interaction: CommandInteraction,
-            client: Client,
     ) {
         if (!interaction.channel) return;
 

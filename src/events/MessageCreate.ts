@@ -59,7 +59,7 @@ export class MessageCreate {
             if (response === content.replaceAll(/<@!?(\d+)>/g, '')) {
                 return message.reply({
                     content: `An error occurred, please report this to a member of our moderation team.\n
-                ${codeBlock('js', 'Error: Reponse was equal to query.')}`,
+                ${codeBlock('js', 'Error: Response was equal to query.')}`,
                 });
             }
 

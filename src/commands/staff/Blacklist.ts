@@ -41,8 +41,6 @@ export class Blacklist {
 
         interaction: CommandInteraction,
     ) {
-        if (!interaction.channel) return;
-
         // Check if command was executed by an admin defined in the environment variable.
         const adminIds = process.env.AdminIds?.split(',');
         const isAdmin = adminIds?.some((id) => id === interaction.user.id);

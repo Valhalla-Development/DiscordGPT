@@ -13,14 +13,12 @@ import { capitalise, messageDelete, getCommandIds } from '../../utils/Util.js';
 @Category('Miscellaneous')
 export class Help {
     /**
-     * Slash command to display list of commands.
+     * Slash command to display a list of commands.
      * @param interaction - The command interaction.
      * @param client - The Discord client.
      */
     @Slash({ description: 'Display list of commands.' })
     async help(interaction: CommandInteraction, client: Client) {
-        if (!interaction.channel) return;
-
         // Create the initial embed for the message
         const embed = new EmbedBuilder()
             .setColor('#EC645D')
@@ -39,7 +37,7 @@ export class Help {
                 .map((cmd: DApplicationCommand & ICategory) => cmd.category as string),
         ));
 
-        // Create options for the select menu
+        // Create options from the select menu
         const cats: SelectMenuComponentOptionData[] = uniqueCategories.map((cat) => ({
             label: cat,
             value: `help-${cat.toLowerCase()}`,

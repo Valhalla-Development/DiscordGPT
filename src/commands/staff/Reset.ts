@@ -30,8 +30,6 @@ export class Reset {
 
             interaction: CommandInteraction,
     ) {
-        if (!interaction.channel) return;
-
         // Check if command was executed by an admin defined in the environment variable.
         const adminIds = process.env.AdminIds?.split(',');
         const isAdmin = adminIds?.some((id) => id === interaction.user.id);
@@ -49,7 +47,7 @@ export class Reset {
         // User has no data saved
         if (!db) return interaction.reply({ ephemeral: true, content: `⚠️ ${user} has no available data to reset.` });
 
-        // User is either whitelisted, or blacklisted
+        // User is either whitelisted or blacklisted
         if (db.blacklisted || db.whitelisted) {
             await interaction.reply({ ephemeral: true, content: `⚠️ ${user} is ${db.whitelisted ? 'whitelisted.' : 'blacklisted.'}` });
             return;

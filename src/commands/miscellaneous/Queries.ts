@@ -105,8 +105,6 @@ export class Queries {
             interaction: CommandInteraction,
             client: Client,
     ) {
-        if (!interaction.channel) return;
-
         const userId = user || interaction.user;
         const member = interaction.guild?.members.cache.get(userId.id);
 

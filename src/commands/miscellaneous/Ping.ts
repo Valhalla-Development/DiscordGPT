@@ -15,9 +15,7 @@ export class Ping {
      */
     @Slash({ description: 'Displays bot and API ping.' })
     async ping(interaction: CommandInteraction, client: Client): Promise<void> {
-        if (!interaction.channel) return;
-
-        const msg = await interaction.channel.send({ content: 'Pinging...' });
+        const msg = await interaction.channel!.send({ content: 'Pinging...' });
         const latency = msg.createdTimestamp - interaction.createdTimestamp;
         messageDelete(msg, 0, client);
 

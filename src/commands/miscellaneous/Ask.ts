@@ -29,8 +29,6 @@ export class Ask {
             interaction: CommandInteraction,
             client: Client,
     ) {
-        if (!interaction.channel) return;
-
         const response = await runGPT(query, interaction.user);
 
         // If the response is boolean and true, then the user already has an ongoing query
@@ -41,7 +39,7 @@ export class Ask {
         if (response === query.replaceAll(/<@!?(\d+)>/g, '')) {
             return interaction.reply({
                 content: `An error occurred, please report this to a member of our moderation team.\n
-                ${codeBlock('js', 'Error: Reponse was equal to query.')}`,
+                ${codeBlock('js', 'Error: Response was equal to query.')}`,
             });
         }
 

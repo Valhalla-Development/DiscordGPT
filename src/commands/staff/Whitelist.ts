@@ -77,7 +77,7 @@ export class Whitelist {
             // Update the whitelist and send a success message.
             await setGptQueryData(
                 user.id,
-                getDb ? Number(getDb.totalQueries) : 1,
+                getDb ? Number(getDb.totalQueries) : 0,
                 Number(RateLimit),
                 Number(1),
                 true,

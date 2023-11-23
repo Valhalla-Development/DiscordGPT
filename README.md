@@ -25,6 +25,7 @@ This project utilizes our [custom-made Discord Bot template](https://github.com/
 ## Features
 
 - **Included Commands:**
+    - **Ask:** You can interact with the GPT by either tagging the bot, or by running the /ask command. 
     - **Queries:** Provides data for a specified user's queries to the API.
     - **Ping:** Offers statistics about the latency of your bot, providing insights into its responsiveness.
     - **Help:** Feature-rich command built from the ground up. It uses slash command links to generate a dynamic and interactive help menu, making it easy for users to explore and understand available commands.

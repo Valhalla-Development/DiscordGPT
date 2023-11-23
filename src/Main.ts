@@ -61,27 +61,20 @@ process.on('unhandledRejection', async (error) => {
  * @throws An Error if any required environment variables are missing or invalid.
  */
 async function run() {
-    const missingTokenError = 'The Token environment variable is missing.';
+    const missingVariableError = (variable: string) => `The ${variable} environment variable is missing.`;
     const invalidLoggingValueError = 'The Logging environment variable must be "true" or "false".';
     const invalidLoggingChannelError = 'The LoggingChannel environment variable is required when logging is enabled.';
-    const missingOpenAiKeyError = 'The OpenAiKey environment variable is missing.';
-    const missingAssistantIdError = 'The AssistantId environment variable is missing.';
-    const missingRateLimitError = 'The RateLimit environment variable is missing.';
-    const missingAdminIdsError = 'The AdminIds environment variable is missing.';
-    const missingStaffRolesError = 'The StaffRoles environment variable is missing.';
-    const missingProjectNameError = 'The ProjectName environment variable is missing.';
-    const missingProjectSupportInviteError = 'The ProjectSupportInvite environment variable is missing.';
 
-    if (!process.env.Token) throw new Error(missingTokenError);
+    if (!process.env.Token) throw new Error(missingVariableError('Token'));
     if (process.env.Logging === 'true' && !process.env.LoggingChannel) throw new Error(invalidLoggingChannelError);
     if (process.env.Logging !== 'true' && process.env.Logging !== 'false') throw new Error(invalidLoggingValueError);
-    if (!process.env.OpenAiKey) throw new Error(missingOpenAiKeyError);
-    if (!process.env.AssistantId) throw new Error(missingAssistantIdError);
-    if (!process.env.RateLimit) throw new Error(missingRateLimitError);
-    if (!process.env.AdminIds) throw new Error(missingAdminIdsError);
-    if (!process.env.StaffRoles) throw new Error(missingStaffRolesError);
-    if (!process.env.ProjectName) throw new Error(missingProjectNameError);
-    if (!process.env.ProjectSupportInvite) throw new Error(missingProjectSupportInviteError);
+    if (!process.env.OpenAiKey) throw new Error(missingVariableError('OpenAiKey'));
+    if (!process.env.AssistantId) throw new Error(missingVariableError('AssistantId'));
+    if (!process.env.RateLimit) throw new Error(missingVariableError('RateLimit'));
+    if (!process.env.AdminIds) throw new Error(missingVariableError('AdminIds'));
+    if (!process.env.StaffRoles) throw new Error(missingVariableError('StaffRoles'));
+    if (!process.env.ProjectName) throw new Error(missingVariableError('ProjectName'));
+    if (!process.env.ProjectSupportInvite) throw new Error(missingVariableError('ProjectSupportInvite'));
 
     /**
      * Delays the execution of the function for a specified time in milliseconds.

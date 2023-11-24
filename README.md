@@ -1,6 +1,10 @@
-# DiscordGPT
-
 <div align="center">
+  <br />
+  <p>
+    <img src="https://i.ibb.co/bWW5p74/discordgpt.png" width="546" alt="DiscordGPT" />
+  </p>
+  <br />
+  <p>
   <a href="https://discord.gg/Q3ZhdRJ">
     <img src="https://img.shields.io/discord/495602800802398212.svg?colorB=Blue&logo=discord&label=Support&style=for-the-badge" alt="Support">
   </a>
@@ -16,50 +20,71 @@
   <a href="https://app.codacy.com/gh/Valhalla-Development/DiscordGPT/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade">
     <img src="https://img.shields.io/codacy/grade/49b97351b8604c9a904991e633afc0be?style=for-the-badge" alt="Codacy Ranking">
   </a>
+  </p>
 </div>
 
-DiscordGPT is a versatile Discord bot designed to connect seamlessly with an [OpenAI Assistant](https://openai.com/blog/introducing-gpts), also known as a [Custom GPT](https://openai.com/blog/introducing-gpts).
+## Welcome to DiscordGPT 🤖
+Your cutting-edge Discord Bot, powered by [OpenAI Assistant](https://openai.com/blog/introducing-gpts),
+also known as a [Custom GPT](https://openai.com/blog/introducing-gpts) for instant,
+smart, and seamless interactions.
+Dive into the era of intelligent chatbots by integrating DiscordGPT with your server.
+</br>Our project is based on a [custom-made Discord Bot template](https://github.com/Valhalla-Development/Bot-Template)
+that awaits your contribution and creativity.
 
-This project utilizes our [custom-made Discord Bot template](https://github.com/Valhalla-Development/Bot-Template).
+## 🚀 Included Commands
 
-## Features
+| **Command**             | **Description**                                                                          |
+|-------------------------|------------------------------------------------------------------------------------------|
+| **Ask**                 | Interact with the GPT by tagging the bot or using the /ask command.                      |
+| **Queries**             | Provides data for specified user queries to the API.                                     |
+| **Ping**                | Offers statistics about the bot's latency.                                               |
+| **Help**                | Feature-rich command with a dynamic and interactive help menu using slash command links. |
+| **Whitelist** *(staff)* | Add users to a whitelist, exempting them from Rate Limit and command cooldown.           |
+| **Blacklist** *(staff)* | Add users to a blacklist, preventing them from making queries to the API.                |
+| **Reset** *(staff)*     | Reset a user's queries cooldown for further use.                                         |
 
-- **Included Commands:**
-    - **Ask:** You can interact with the GPT by either tagging the bot, or by running the /ask command. 
-    - **Queries:** Provides data for a specified user's queries to the API.
-    - **Ping:** Offers statistics about the latency of your bot, providing insights into its responsiveness.
-    - **Help:** Feature-rich command built from the ground up. It uses slash command links to generate a dynamic and interactive help menu, making it easy for users to explore and understand available commands.
-- **Included Staff Commands:**
-    - **Whitelist:** Ability to add users to a whitelist, exempting them from the defined Rate Limit and command cooldown.
-    - **Blacklist:** Ability to add users to a blacklist, preventing them from making any queries to the API.
-    - **Reset:** Ability to reset a user's queries cooldown, allowing for further use.
-- **Bot Info:** Upon startup, the bot provides a concise status report, detailing key operational metrics such as the number of users, guilds, slash commands, events, and memory usage. It also includes information on the Node.js and discord.js versions it's running on.
-- **Error Handling:** This template features a robust error handling system. It logs errors to the console for debugging and can send detailed error messages to a specified Discord channel. These messages are neatly formatted within a Discord embed for easy readability. To enable this feature, provide the `LoggingChannel` variable in your `.env` file with the ID of the desired channel.
-- **Command Logging:** Similar to error handling, this template offers the ability to log command usage. It can send formatted embeds to a channel of your choice. To enable this feature, provide the `CommandLogging` variable in your `.env` file with the ID of the desired channel.
-- **TSDoc Comments and Documentation:** The bot template is thoroughly documented with TSDoc comments and includes explanatory comments throughout the code. These comments and documentation serve as a helpful resource to understand how different components and functionalities of the bot work.
+## 🤖 Bot Info
 
-## OpenAI
+Upon startup, the bot provides a concise status report,
+detailing key operational metrics such as the number of users, guilds, slash commands, events, and memory usage.
+It also includes information on the Node.js and discord.js versions it's running on.
 
-Assuming you have a basic understanding of development, key links for this project include:
-- **Assistant Configuration:** Find your assistant and its corresponding ID [here](https://platform.openai.com/assistants).
-- **OpenAI API Key:** Generate an API key [here](https://platform.openai.com/api-keys).
-- **Assistants API:** View the entire documentation on the API [here](https://platform.openai.com/docs/assistants/overview) and the API references [here](https://platform.openai.com/docs/api-reference/assistants).
+## ⚠️ Error Handling
 
-## Setup
+- Logs errors to the console for debugging.
+- Sends detailed error messages to a specified Discord channel (provide `LoggingChannel` in your `.env` file).
+
+## 📊 Command Logging
+
+Logs command usage to a specified channel (provide `CommandLogging` in your `.env` file).
+
+## 📚 TSDoc Comments and Documentation
+
+Thoroughly documented with TSDoc comments and explanatory notes throughout the code.
+
+## 📘 OpenAI Integration
+
+Don't worry; getting your bot up and running is as easy as pie 🍰 with these key links:
+- [Assistant Setup](https://platform.openai.com/assistants): Select your assistant and ID.
+- [API Key Generation](https://platform.openai.com/api-keys): Secure your OpenAI API key.
+- [API Docs](https://platform.openai.com/docs/assistants/overview): Explore the comprehensive API guide and [reference](https://platform.openai.com/docs/api-reference/assistants).
+
+## 🚀 Getting Started
 
 1. Download the source by clicking on 'Releases' -> 'Latest version' -> 'Source code (zip)' or [click here](https://github.com/Valhalla-Development/DiscordGPT/releases).
-2. Extract the zip using an archive tool of your choice.
-3. Inside the extracted folder, you will find a file named `.env.example`. Rename it to `.env` and fill in the necessary values. If you're unsure where to find your bot token and owner ID, refer to these links: [bot token](https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token) | [owner ID](https://support.discordapp.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID-).
-4. Open a console window in the root directory of the bot and run the following commands:
+2. Rename `.env.example` into `.env` and enter your environment variables.
+3. Open a terminal window within the source directory, and enter the following commands:
 
     ```shell
-    $ yarn install  # Installs the required modules. Once completed, run the next command:
-    $ yarn start    # Starts your bot. You are now ready to use your bot!
+    yarn install
+    ```
+     ```shell
+    yarn start
     ```
 
-## Screenshots
+## 📸 Peek Inside
 
-Screenshots related to the features mentioned on this page:
+Get visual insight into DiscordGPT's capabilities:
 
 - **Queries Command**
   </br><img src="https://valhalladev.org/discordgpt/queries.png" alt="Bot Info" style="width: 500px;">
@@ -75,3 +100,9 @@ Screenshots related to the features mentioned on this page:
   </br><img src="https://valhalladev.org/discordgpt/help1.png" alt="Help" style="width: 400px;">
 - **Help Staff Command**
   </br><img src="https://valhalladev.org/discordgpt/help2.png" alt="Help" style="width: 400px;">
+
+Embark on your DiscordGPT journey with us, and witness your server transformed by the power of AI! 🚀
+
+---
+
+Still got questions or ready to contribute? Jump into our [Discord](https://discord.gg/Q3ZhdRJ) and let's make some magic happen! ✨ here

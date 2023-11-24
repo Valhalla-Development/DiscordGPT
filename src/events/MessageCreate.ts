@@ -69,7 +69,7 @@ export class MessageCreate {
             // If response is an array of responses
             if (Array.isArray(response)) {
                 // Edit the first message
-                const initialMessage = await message.reply({ content: response[0] });
+                const initialMessage = await msg.reply({ content: response[0] });
                 await initialMessage.reply({ content: response[1] });
             } else if (typeof response === 'string') {
                 // If the response is a string, send a single message

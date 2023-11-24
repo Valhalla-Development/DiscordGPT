@@ -45,6 +45,7 @@ export class MessageCreate {
                 chance <= 0.04
                 && regex.test(message.content)
                 && message.content.replaceAll(/<@!?(\d+)>/g, '').length
+                && !message.reference
             );
         };
 

@@ -33,7 +33,7 @@ export class MessageCreate {
         // Function to check whether the bot should respond to the message.
         const shouldRespond = () => {
             // Check if the channel is excluded
-            const excludedChannels = process.env.ExcludedChannels ? process.env.ExcludedChannels.split(',') : [];
+            const excludedChannels = process.env.ExcludedChannels?.split(',') ?? [];
             if (excludedChannels.includes(message.channel.id)) {
                 return false;
             }

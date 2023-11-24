@@ -94,7 +94,7 @@ export class MessageCreate {
                 if (isBotReply && message.author.id !== client.user?.id) {
                     await processGPT(message.content, message.author, message);
                 } else if (message.mentions.has(`${client.user?.id}`) && !message.author.bot) {
-                    await processGPT(repliedMessage.content, repliedMessage.author, repliedMessage);
+                    await processGPT(repliedMessage.content, message.author, repliedMessage);
                 }
             } catch (e) {
                 console.error('Error fetching or processing the replied message:', e);

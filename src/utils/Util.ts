@@ -110,7 +110,7 @@ export async function loadAssistant(
             expiration, whitelisted, blacklisted, threadId,
         } = userQueryData || {};
 
-        if (threadId && threadId !== thread.id) {
+        if (threadId !== thread.id) {
             await setGptQueryData(
                 user.id,
                 Number(totalQueries) || 0,

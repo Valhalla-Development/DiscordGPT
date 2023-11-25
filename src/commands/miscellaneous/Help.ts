@@ -114,23 +114,6 @@ export class Help {
         // Extract the category from the selected value
         const selectedCategory = selectedValue.replace(/^help-/, '').toLowerCase();
 
-        // Don't allow non-staff to select the staff category
-        const staffRoles = process.env.StaffRoles?.split(',');
-        const isStaff = staffRoles?.some((roleID) => interaction.member?.roles instanceof GuildMemberRoleManager
-                && interaction.member.roles.cache.has(roleID));
-        if ((selectedCategory === 'staff') && !isStaff) {
-            const notStaff = new EmbedBuilder()
-                .setColor('#EC645D')
-                .addFields({
-                    name: `**${client.user?.username} - ${capitalise(interaction.message.interaction?.commandName ?? '')}**`,
-                    value: '**◎ Error:** Only staff members can select this option!',
-                });
-
-            // Reply with an ephemeral message indicating the error
-            await interaction.reply({ ephemeral: true, embeds: [notStaff] });
-            return;
-        }
-
         // Filter application commands based on the selected category
         const filteredCommands = MetadataStorage.instance.applicationCommands.filter(
             (cmd: DApplicationCommand & ICategory) => cmd.category?.toLowerCase() === selectedCategory && cmd.name?.toLowerCase() !== 'help',

@@ -31,11 +31,19 @@ export class Help {
             });
 
         // Fetch unique command categories
-        const uniqueCategories = Array.from(new Set(
+        let uniqueCategories = Array.from(new Set(
             MetadataStorage.instance.applicationCommands
                 .filter((cmd: DApplicationCommand & ICategory) => cmd.category)
                 .map((cmd: DApplicationCommand & ICategory) => cmd.category as string),
         ));
+
+        // If the user is not staff, filter out the staff command menu
+        const staffRoles = process.env.StaffRoles?.split(',');
+        const isStaff = staffRoles?.some((roleID) => interaction.member?.roles instanceof GuildMemberRoleManager
+            && interaction.member.roles.cache.has(roleID));
+        if (!isStaff) {
+            uniqueCategories = uniqueCategories.filter((item) => item !== 'Staff');
+        }
 
         // Create options from the select menu
         const cats: SelectMenuComponentOptionData[] = uniqueCategories.map((cat) => ({

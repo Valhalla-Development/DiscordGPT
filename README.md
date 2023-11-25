@@ -28,7 +28,7 @@ Your cutting-edge Discord Bot, powered by [OpenAI Assistant](https://openai.com/
 also known as a [Custom GPT](https://openai.com/blog/introducing-gpts) for instant,
 smart, and seamless interactions.
 Dive into the era of intelligent chatbots by integrating DiscordGPT with your server.
-</br>Our project is based on a [custom-made Discord Bot template](https://github.com/Valhalla-Development/Bot-Template)
+</br>Our project is based on our [custom-made Discord Bot template](https://github.com/Valhalla-Development/Bot-Template)
 that awaits your contribution and creativity.
 
 ## 🚀 Included Commands

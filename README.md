@@ -1,7 +1,7 @@
 <div align="center">
   <br />
   <p>
-    <img src="https://i.ibb.co/nByJ2fJ/discordgpt.png" width="546" alt="DiscordGPT" />
+    <img src="https://valhalladev.org/discordgpt/readme.png" width="546" alt="DiscordGPT" />
   </p>
   <br />
   <p>

@@ -1,7 +1,7 @@
 {
   "name": "discordgpt",
   "description": "DiscordGPT is a Discord bot designed to utilize an OpenAI Assistant.",
-  "version": "1.2.54",
+  "version": "1.2.58",
   "main": "build/Main.js",
   "repository": "https://github.com/Valhalla-Development/Bot-Template.git",
   "author": "Ragnar Lothbrok <ragnarlothbrokjr@proton.me>",

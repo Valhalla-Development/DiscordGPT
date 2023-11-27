@@ -365,7 +365,7 @@ export async function runGPT(
     if (typeof isGptAvailable === 'string') return isGptAvailable;
 
     // Load the Assistant for the message content
-    const response = await loadAssistant(content, user);
+    const response = await loadAssistant(content.trim(), user);
 
     // If the typeof response is boolean and true, the user already has an ongoing prompt.
     if (typeof response === 'boolean') return true;

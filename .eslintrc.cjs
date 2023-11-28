@@ -6,7 +6,7 @@ module.exports = {
         tsconfigRootDir: __dirname,
     },
     plugins: ['@typescript-eslint'],
-    extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', 'airbnb-base'],
+    extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', require.resolve("eslint-config-airbnb/base")],
     rules: {
         'quotes': ['error', 'single'],
         'object-curly-spacing': ['error', 'always'],

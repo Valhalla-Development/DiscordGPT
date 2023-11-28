@@ -36,6 +36,8 @@ build/
 # Yarn: lock file and error log
 yarn-error.log
 .yarn/install-state.gz
+.pnp.cjs
+.pnp.loader.mjs
 
 # ========================
 # Database file

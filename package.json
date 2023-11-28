@@ -1,7 +1,7 @@
 {
   "name": "discordgpt",
   "description": "DiscordGPT is a Discord bot designed to utilize an OpenAI Assistant.",
-  "version": "1.2.60",
+  "version": "1.2.61",
   "main": "build/Main.js",
   "repository": "https://github.com/Valhalla-Development/Bot-Template.git",
   "author": "Ragnar Lothbrok <ragnarlothbrokjr@proton.me>",
@@ -34,7 +34,6 @@
     "@typescript-eslint/parser": "^6.13.0",
     "eslint": "^8.54.0",
     "eslint-config-airbnb": "^19.0.4",
-    "eslint-formatter-codeframe": "^7.32.1",
     "eslint-formatter-table": "^7.32.1",
     "eslint-plugin-import": "^2.29.0",
     "typescript": "^5.3.2"

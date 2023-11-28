@@ -17,18 +17,26 @@ export class MessageCreate {
         // Return if the author is a bot, preventing the bot from replying to itself or other bots.
         if (message.author.bot) return;
 
+        const replyMsg = process.env.ProjectSupportInvite
+            ? `[${client.user?.username} Discord server](${process.env.ProjectSupportInvite})`
+            : `**${client.user?.username} Discord server**`;
+
         // Direct users to the Discord server if messageCreate is triggered outside a guild.
         if (!message.guild) {
             const embed = new EmbedBuilder().setColor('#EC645D').addFields([
                 {
                     name: `**${client.user?.username}**`,
-                    value: `To better assist you, please use our bot within the [${process.env.ProjectName} Discord server](${process.env.ProjectSupportInvite}).\nHead over there for a seamless experience. See you on the server!`,
+                    value: `To better assist you, please use our bot within the ${replyMsg}.\nHead over there for a seamless experience. See you on the server!`,
                 },
             ]);
 
             await message.reply({ embeds: [embed] });
             return;
         }
+
+        // Return if guild is not whitelisted
+        const { ServerWhitelist } = process.env;
+        if (ServerWhitelist && !ServerWhitelist.split(',').some((item) => item === message.guild?.id.toString())) return;
 
         // Function to check whether the bot should respond to the message.
         const shouldRespond = () => {

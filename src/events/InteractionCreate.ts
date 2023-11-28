@@ -17,6 +17,10 @@ export class InteractionCreate {
             || (!interaction.isStringSelectMenu() && !interaction.isChatInputCommand()
                 && !interaction.isContextMenuCommand() && !interaction.isButton())) return;
 
+        // Return if guild is not whitelisted
+        const { ServerWhitelist } = process.env;
+        if (ServerWhitelist && !ServerWhitelist.split(',').some((item) => item === interaction.guild?.id.toString())) return;
+
         try {
             await client.executeInteraction(interaction);
         } catch (err) {

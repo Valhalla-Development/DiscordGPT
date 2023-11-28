@@ -73,8 +73,6 @@ async function run() {
     if (!process.env.RateLimit) throw new Error(missingVariableError('RateLimit'));
     if (!process.env.AdminIds) throw new Error(missingVariableError('AdminIds'));
     if (!process.env.StaffRoles) throw new Error(missingVariableError('StaffRoles'));
-    if (!process.env.ProjectName) throw new Error(missingVariableError('ProjectName'));
-    if (!process.env.ProjectSupportInvite) throw new Error(missingVariableError('ProjectSupportInvite'));
 
     /**
      * Delays the execution of the function for a specified time in milliseconds.

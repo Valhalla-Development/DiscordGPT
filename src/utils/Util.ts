@@ -14,7 +14,9 @@ keyv.on('error', (err) => console.log('[keyv] Connection Error', err));
  * @returns The capitalised string.
  */
 export function capitalise(string: string): string {
-    return string.replace(/\S+/g, (word) => word.slice(0, 1).toUpperCase() + word.slice(1));
+    return string.split(' ')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
 }
 
 /**

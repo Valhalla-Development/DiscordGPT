@@ -1,6 +1,4 @@
-import {
-    codeBlock, Message, User,
-} from 'discord.js';
+import { codeBlock, Message, User } from 'discord.js';
 import type { Client } from 'discordx';
 import type { MessageContentText } from 'openai/resources/beta/threads';
 import 'colors';
@@ -55,13 +53,9 @@ export async function getCommandIds(client: Client): Promise<{ [name: string]: s
         }
 
         // Create an object to store the command IDs
-        const commandIds: { [name: string]: string } = {};
-
-        commands.forEach((command) => {
-            commandIds[command.name] = command.id;
-        });
-
-        return commandIds;
+        return Object.fromEntries(
+            commands.map((command) => [command.name, command.id]),
+        );
     } catch (error) {
         console.error('Error fetching global commands:', error);
         return {};

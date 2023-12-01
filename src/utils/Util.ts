@@ -214,15 +214,27 @@ export async function setGptQueryData(
     blacklisted: boolean,
     threadId: string,
 ): Promise<{ totalQueries: number; queriesRemaining: number; expiration: number; whitelisted: boolean; blacklisted: boolean; threadId: string }> {
-    // Convert booleans to integers for SQLite storage
-    const whitelistedInt = whitelisted ? 1 : 0;
-    const blacklistedInt = blacklisted ? 1 : 0;
+    // Helper function to convert boolean to integer
+    const boolToInt = (bool: boolean) => (bool ? 1 : 0);
 
+    // Store the data
     await keyv.set(userId, {
-        totalQueries, queriesRemaining, expiration, whitelisted: whitelistedInt, blacklisted: blacklistedInt, threadId,
+        totalQueries,
+        queriesRemaining,
+        expiration,
+        whitelisted: boolToInt(whitelisted),
+        blacklisted: boolToInt(blacklisted),
+        threadId,
     });
+
+    // Return the data
     return {
-        totalQueries, queriesRemaining, expiration, whitelisted, blacklisted, threadId,
+        totalQueries,
+        queriesRemaining,
+        expiration,
+        whitelisted,
+        blacklisted,
+        threadId,
     };
 }
 

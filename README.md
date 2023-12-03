@@ -1,7 +1,7 @@
 <div align="center">
   <br />
   <p>
-    <img src="https://valhalladev.org/discordgpt/banner.png" width="550" alt="DiscordGPT" />
+    <img src="https://share.valhalladev.org/u/RkmYp5.png" width="550" alt="DiscordGPT" />
   </p>
   <br />
   <p>
@@ -18,7 +18,7 @@
     <img src="https://img.shields.io/github/issues-pr/Valhalla-Development/DiscordGPT.svg?style=for-the-badge" alt="Pull Requests">
   </a>
   <a href="https://app.codacy.com/gh/Valhalla-Development/DiscordGPT/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade">
-    <img src="https://img.shields.io/codacy/grade/49b97351b8604c9a904991e633afc0be?style=for-the-badge" alt="Codacy Ranking">
+    <img src="https://img.shields.io/codacy/grade/2ff67fb8640245b79e8dfd6118840e2d?style=for-the-badge" alt="Codacy Ranking">
   </a>
   </p>
 </div>
@@ -87,19 +87,19 @@ Don't worry; getting your bot up and running is as easy as pie 🍰 with these k
 Get visual insight into DiscordGPT's capabilities:
 
 - **Queries Command**
-  </br><img src="https://valhalladev.org/discordgpt/queries.png" alt="Bot Info" style="width: 500px;">
+  </br><img src="https://share.valhalladev.org/u/oUaAgt.png" alt="Bot Info" style="width: 500px;">
 - **Query Interaction**
-  </br><img src="https://valhalladev.org/discordgpt/query.png" alt="Bot Info" style="width: 500px;">
+  </br><img src="https://share.valhalladev.org/u/nfDVGg.png" alt="Bot Info" style="width: 500px;">
 - **Bot Info**
-  </br><img src="https://valhalladev.org/wilbur/info.png" alt="Bot Info" style="width: 500px;">
+  </br><img src="https://share.valhalladev.org/u/eB587n.png" alt="Bot Info" style="width: 500px;">
 - **Error Handling**
-  </br><img src="https://valhalladev.org/wilbur/error.png" alt="Error Handler" style="width: 300px;">
+  </br><img src="https://share.valhalladev.org/u/Raxmmv.png" alt="Error Handler" style="width: 300px;">
 - **Command Logging**
-  </br><img src="https://valhalladev.org/wilbur/command.png" alt="Command Logger" style="width: 400px;">
+  </br><img src="https://share.valhalladev.org/u/rsRWEI.png" alt="Command Logger" style="width: 400px;">
 - **Help Misc Command**
-  </br><img src="https://valhalladev.org/discordgpt/help1.png" alt="Help" style="width: 400px;">
+  </br><img src="https://share.valhalladev.org/u/Pb5cZM.png" alt="Help" style="width: 400px;">
 - **Help Staff Command**
-  </br><img src="https://valhalladev.org/discordgpt/help2.png" alt="Help" style="width: 400px;">
+  </br><img src="https://share.valhalladev.org/u/KdeYHr.png" alt="Help" style="width: 400px;">
 
 Embark on your DiscordGPT journey with us, and witness your server transformed by the power of AI! 🚀
 

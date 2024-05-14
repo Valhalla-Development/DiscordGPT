@@ -1,6 +1,6 @@
 import { codeBlock, Message, User } from 'discord.js';
 import type { Client } from 'discordx';
-import type { MessageContentText } from 'openai/resources/beta/threads';
+import type { TextContentBlock } from 'openai/resources/beta/threads';
 import 'colors';
 import OpenAI from 'openai';
 import Keyv from 'keyv';
@@ -174,7 +174,7 @@ export async function loadAssistant(
         console.log('Completed query.');
 
         // Extract text value from the Assistant's response
-        const textValue = (messages.data[0].content[0] as MessageContentText)?.text?.value;
+        const textValue = (messages.data[0].content[0] as TextContentBlock)?.text?.value;
 
         // If the length of the text is greater than the desired target and does not exceed a desired target
         // then proceed to split the response into an array of messages

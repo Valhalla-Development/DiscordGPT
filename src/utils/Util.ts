@@ -4,8 +4,9 @@ import type { TextContentBlock } from 'openai/resources/beta/threads';
 import 'colors';
 import OpenAI from 'openai';
 import Keyv from 'keyv';
+import KeyvSqlite from '@keyv/sqlite';
 
-const keyv = new Keyv('sqlite://src/data/db.sqlite', { table: 'userData', namespace: 'userData' });
+const keyv = new Keyv({ store: new KeyvSqlite({ uri: 'sqlite://src/data/db.sqlite' }), namespace: 'userData' });
 keyv.on('error', (err) => console.log('[keyv] Connection Error', err));
 
 /**

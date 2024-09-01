@@ -6,6 +6,15 @@ import OpenAI from 'openai';
 import Keyv from 'keyv';
 import KeyvSqlite from '@keyv/sqlite';
 
+interface UserData {
+    totalQueries: number;
+    queriesRemaining: number;
+    expiration: number;
+    whitelisted: number;
+    blacklisted: number;
+    threadId: string;
+}
+
 const keyv = new Keyv({ store: new KeyvSqlite({ uri: 'sqlite://src/data/db.sqlite' }), namespace: 'userData' });
 keyv.on('error', (err) => console.log('[keyv] Connection Error', err));
 
@@ -248,7 +257,7 @@ export async function getGptQueryData(
     userId: string,
 ): Promise<{ totalQueries: number,
     queriesRemaining: number; expiration: number; whitelisted: boolean; blacklisted: boolean; threadId: string } | false> {
-    const data = await keyv.get(userId);
+    const data = await keyv.get(userId) as UserData | null;
 
     // If data exists, convert integer values to booleans and return
     if (data) {

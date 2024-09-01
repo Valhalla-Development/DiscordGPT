@@ -189,11 +189,7 @@ export async function loadAssistant(
         // If the length of the text is greater than the desired target and does not exceed a desired target
         // then proceed to split the response into an array of messages
         if (textValue.length >= 1950) {
-            if (textValue.length >= 3900) return new Error('Response exceeded length of 4000. Please report this to a member of staff');
-
-            const split = await splitMessages(textValue, 1950);
-            // If split is not an array, return the error
-            if (!Array.isArray(split)) return split;
+            return await splitMessages(textValue, 1950);
         }
 
         // Length does not exceed the desired target, return string
@@ -389,7 +385,7 @@ export async function runGPT(
     if (typeof response === 'boolean') return true;
 
     // Reply with the Assistant's response
-    if (typeof response === 'string') return response;
+    if (typeof response === 'string' || Array.isArray(response)) return response;
 
     // Response was not a string, therefore, is an error
     return `An error occurred, please report this to a member of our moderation team.\n${codeBlock('ts', `${response}`)}`;
@@ -402,32 +398,38 @@ export async function runGPT(
  * @param length - The desired length of each chunk.
  * @returns A promise resolving to an array of strings representing the split content.
  */
-export async function splitMessages(content: string, length: number): Promise<string[] | Error> {
-    let remainingContent = content;
+export async function splitMessages(content: string, length: number): Promise<string[]> {
     const chunks: string[] = [];
+    let remainingContent = content.trim();
 
-    // Calculate the total number of chunks
-    const totalChunks = Math.ceil(content.length / length);
-
-    // Split the response into chunks of length characters without cutting words
     while (remainingContent.length > 0) {
-        let chunk = remainingContent.substring(0, length);
+        let chunkEnd = length;
 
-        // Check if the chunk ends in the middle of a word
-        const lastSpaceIndex = chunk.lastIndexOf(' ');
-        if (lastSpaceIndex !== -1) {
-            chunk = chunk.substring(0, lastSpaceIndex);
-            remainingContent = remainingContent.substring(lastSpaceIndex + 1);
+        // If the remaining content is shorter than maxLength, use its length
+        if (remainingContent.length <= length) {
+            chunkEnd = remainingContent.length;
         } else {
-            // If no space is found, take the entire chunk
-            remainingContent = remainingContent.substring(length);
+            // Find the last space within the length limit
+            while (chunkEnd > 0 && remainingContent[chunkEnd - 1] !== ' ') {
+                chunkEnd -= 1;
+            }
+
+            // If no space found, find the next space after length
+            if (chunkEnd === 0) {
+                chunkEnd = remainingContent.indexOf(' ', length);
+                if (chunkEnd === -1) chunkEnd = remainingContent.length; // If no space found, take the whole remaining content
+            }
         }
 
-        const pageNumber = chunks.length + 1;
-        const numberedChunk = `${chunk}\n\`${pageNumber}\`/\`${totalChunks}\``;
-        chunks.push(numberedChunk);
+        // Extract the chunk
+        const chunk = remainingContent.slice(0, chunkEnd).trim();
+        chunks.push(chunk);
+
+        // Update remaining content
+        remainingContent = remainingContent.slice(chunkEnd).trim();
     }
 
-    if (chunks.length > 2) throw new Error('Split Message array was greater than or equal to 2.');
-    return chunks;
+    // Add page numbers to chunks
+    const totalChunks = chunks.length;
+    return chunks.map((chunk, index) => `${chunk}\n\`${index + 1}\`/\`${totalChunks}\``);
 }

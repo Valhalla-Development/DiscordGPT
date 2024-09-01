@@ -1,7 +1,7 @@
 import {
     Client, Discord, Slash, SlashOption,
 } from 'discordx';
-import type { CommandInteraction } from 'discord.js';
+import type { CommandInteraction, Message } from 'discord.js';
 import { ApplicationCommandOptionType, codeBlock } from 'discord.js';
 import { Category } from '@discordx/utilities';
 import { runGPT } from '../../utils/Util.js';
@@ -47,9 +47,12 @@ export class Ask {
 
         // If response is an array of responses
         if (Array.isArray(response)) {
-            // Edit the first message
-            const msg = await interaction.editReply({ content: response[0] });
-            await msg.reply({ content: response[1] });
+            await response.reduce<Promise<Message>>(async (prevMsgPromise, content, index) => {
+                const msg = await prevMsgPromise;
+                return index === 0
+                    ? interaction.editReply({ content })
+                    : msg.reply({ content });
+            }, Promise.resolve(interaction.fetchReply()));
         } else if (typeof response === 'string') {
             // If the response is a string, send a single message
             await interaction.editReply({ content: response });

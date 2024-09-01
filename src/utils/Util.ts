@@ -89,7 +89,7 @@ export async function loadAssistant(
 
     const str = query.replaceAll(/<@!?(\d+)>/g, '');
 
-    if (str.length <= 4) {
+    if (str.length < 4) {
         return 'Please enter a valid query, with a minimum length of 4 characters.';
     }
 

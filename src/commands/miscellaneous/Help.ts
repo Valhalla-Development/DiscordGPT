@@ -7,7 +7,7 @@ import {
     ActionRowBuilder, EmbedBuilder, GuildMemberRoleManager, StringSelectMenuBuilder,
 } from 'discord.js';
 import { Category, ICategory } from '@discordx/utilities';
-import { capitalise, messageDelete, getCommandIds } from '../../utils/Util.js';
+import { capitalise, getCommandIds, messageDelete } from '../../utils/Util.js';
 
 @Discord()
 @Category('Miscellaneous')

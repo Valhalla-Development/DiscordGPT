@@ -1,8 +1,6 @@
 import { Discord, Slash, SlashOption } from 'discordx';
 import type { CommandInteraction } from 'discord.js';
-import {
-    ApplicationCommandOptionType, GuildMember, PermissionsBitField,
-} from 'discord.js';
+import { ApplicationCommandOptionType, GuildMember, PermissionsBitField } from 'discord.js';
 import { Category } from '@discordx/utilities';
 import { getGptQueryData, setGptQueryData } from '../../utils/Util.js';
 

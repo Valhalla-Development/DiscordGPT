@@ -1,17 +1,17 @@
 import {
-    ButtonComponent,
-    Client, Discord, Slash, SlashOption,
+    ButtonComponent, Client, Discord, Slash, SlashOption,
 } from 'discordx';
 import type { CommandInteraction } from 'discord.js';
 import {
     ActionRowBuilder,
     ApplicationCommandOptionType,
     ButtonBuilder,
+    ButtonInteraction,
+    ButtonStyle,
     EmbedBuilder,
     GuildMember,
     GuildMemberRoleManager,
-    ButtonStyle,
-    ButtonInteraction, InteractionResponse,
+    InteractionResponse,
 } from 'discord.js';
 import { Category } from '@discordx/utilities';
 import { getGptQueryData, setGptQueryData } from '../../utils/Util.js';

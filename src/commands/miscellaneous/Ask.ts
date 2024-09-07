@@ -40,13 +40,7 @@ export class Ask {
         await interaction.deferReply();
 
         // Declare a variable which will hold the image URL if it exists
-        let img;
-
-        // Check if the 'image' Attachment is available and is a valid image
-        if (image) {
-            const isImage = image.contentType?.startsWith('image/');
-            img = image.url && isImage ? image.url : null;
-        }
+        const img = image?.contentType?.startsWith('image/') ? image.url : null;
 
         // Pass the options to run the 'runGPT' function
         const response = await runGPT(query, img || null, interaction.user);

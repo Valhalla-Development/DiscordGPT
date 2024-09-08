@@ -402,11 +402,11 @@ export class Queries {
         // Delete thread id
         const newData = await setGptQueryData(
             member.id,
-            db.totalQueries,
-            Number(RateLimit),
-            Number(1),
-            !db.whitelisted,
-            false,
+            Number(db.totalQueries) || 0,
+            Number(db.queriesRemaining) || 0,
+            Number(db.expiration) || 0,
+            db.whitelisted || false,
+            db.blacklisted || false,
             '',
         );
 

@@ -179,7 +179,11 @@ export async function loadAssistant(
          */
         async function checkCompletion() {
             if (retrieve.status !== 'completed' && retrieve.status !== 'in_progress' && retrieve.status !== 'queued') {
-                throw new Error(`[Check Completion] Unexpected status: ${retrieve.status}`);
+                // Optional last error message if it exists
+                const lastError = retrieve.last_error ? `\nError Code: ${retrieve.last_error.code}` : '';
+
+                // Throw an error message
+                throw new Error(`completion\nStatus: ${retrieve.status}${lastError}`);
             }
 
             console.log(`Status: ${retrieve.status}`);

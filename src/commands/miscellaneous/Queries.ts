@@ -1,13 +1,13 @@
 import {
     ButtonComponent, Client, Discord, Slash, SlashOption,
 } from 'discordx';
-import type { CommandInteraction } from 'discord.js';
 import {
     ActionRowBuilder,
     ApplicationCommandOptionType,
     ButtonBuilder,
     ButtonInteraction,
     ButtonStyle,
+    CommandInteraction,
     EmbedBuilder,
     GuildMember,
     GuildMemberRoleManager,
@@ -27,7 +27,8 @@ export class Queries {
 
     private generateEmbed(
         member: GuildMember,
-        getData: { totalQueries: number, queriesRemaining: number; expiration: number; whitelisted: boolean; blacklisted: boolean },
+        getData: { totalQueries: number, queriesRemaining: number; expiration: number;
+            whitelisted: boolean; blacklisted: boolean, threadId: string; },
         client: Client,
     ): { embed: EmbedBuilder, row: ActionRowBuilder<ButtonBuilder> } {
         const fields = [];
@@ -75,12 +76,18 @@ export class Queries {
                 .setStyle(ButtonStyle.Secondary),
         );
 
-        // Only show whitelist button if the user is an admin.
+        // Only show whitelist & delete thread button if the user is an admin.
         if (this.isAdmin) {
             row.addComponents(new ButtonBuilder()
                 .setCustomId('whitelistButton')
                 .setLabel('Toggle Whitelist')
                 .setStyle(ButtonStyle.Secondary));
+
+            row.addComponents(new ButtonBuilder()
+                .setCustomId('deleteThreadButton')
+                .setLabel('Delete Thread')
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(!getData.threadId || getData.threadId === ''));
         }
 
         const embed = new EmbedBuilder()
@@ -343,6 +350,65 @@ export class Queries {
                 '',
             );
         }
+
+        if (msg) {
+            const { embed, row } = this.generateEmbed(member, newData, client);
+
+            await msg.edit({ embeds: [embed], components: [row] });
+            await interaction.deferUpdate();
+        }
+    }
+
+    /**
+     * Handles button click events from the "Delete Thread" button.
+     * @param interaction - The ButtonInteraction object that represents the user's interaction with the button.
+     * @param client - The Discord client.
+     */
+    @ButtonComponent({ id: 'deleteThreadButton' })
+    async deleteThreadButtonClicked(interaction: ButtonInteraction, client: Client) {
+        const { member, msg } = this;
+
+        // Return if the interaction and msg id do not match.
+        if (interaction.message.interaction?.id !== msg?.id) return interaction.deferUpdate();
+
+        if (interaction.user.id !== interaction.message.interaction?.user.id) {
+            const wrongUserMessage = new EmbedBuilder()
+                .setColor('#EC645D')
+                .addFields({
+                    name: `**${client.user?.username} - Query Checker**`,
+                    value: '**◎ Error:** Only the command executor can select an option!',
+                });
+
+            // Reply with an ephemeral message indicating the error
+            await interaction.reply({ ephemeral: true, embeds: [wrongUserMessage] });
+            return;
+        }
+
+        const { RateLimit } = process.env;
+
+        const noData = new EmbedBuilder()
+            .setColor('#EC645D')
+            .addFields({
+                name: `**${client.user?.username} - Query Checker**`,
+                value: '**◎ Error:** No data to reset.',
+            });
+
+        if (!member) return interaction.reply({ ephemeral: true, embeds: [noData] });
+
+        const db = await getGptQueryData(member.id);
+
+        if (!db) return interaction.reply({ ephemeral: true, embeds: [noData] });
+
+        // Delete thread id
+        const newData = await setGptQueryData(
+            member.id,
+            db.totalQueries,
+            Number(RateLimit),
+            Number(1),
+            !db.whitelisted,
+            false,
+            '',
+        );
 
         if (msg) {
             const { embed, row } = this.generateEmbed(member, newData, client);

@@ -384,8 +384,6 @@ export class Queries {
             return;
         }
 
-        const { RateLimit } = process.env;
-
         const noData = new EmbedBuilder()
             .setColor('#EC645D')
             .addFields({

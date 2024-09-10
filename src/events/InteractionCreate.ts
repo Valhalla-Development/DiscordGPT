@@ -24,7 +24,8 @@ export class InteractionCreate {
         try {
             await client.executeInteraction(interaction);
         } catch (err) {
-            console.error(`Error executing interaction: ${err}`);
+            console.error('Error executing interaction');
+            console.error(err);
         }
 
         if (process.env.Logging && process.env.Logging.toLowerCase() === 'true') {

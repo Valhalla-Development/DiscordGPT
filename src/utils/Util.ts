@@ -204,14 +204,17 @@ export async function loadAssistant(
         // Extract text value from the Assistant's response
         const textValue = (messages.data[0].content[0] as TextContentBlock)?.text?.value;
 
+        // Process string
+        const responseText = await processString(textValue);
+
         // If the length of the text is greater than the desired target and does not exceed a desired target
         // then proceed to split the response into an array of messages
-        if (textValue.length >= 1950) {
-            return await splitMessages(textValue, 1950);
+        if (responseText.length >= 1950) {
+            return await splitMessages(responseText, 1950);
         }
 
         // Length does not exceed the desired target, return string
-        return textValue.replaceAll(/【.*?】/g, '');
+        return responseText;
     } catch (error) {
         console.error(error);
         return error as Error;
@@ -452,4 +455,33 @@ export async function splitMessages(content: string, length: number): Promise<st
     // Add page numbers to chunks
     const totalChunks = chunks.length;
     return chunks.map((chunk, index) => `${chunk}\n\`${index + 1}\`/\`${totalChunks}\``);
+}
+
+/**
+ * Processes a string by removing specific brackets and formatting links based on environment variables.
+ * @param str - The input string to process.
+ * @returns A promise that resolves to the processed string.
+ */
+export async function processString(str: string): Promise<string> {
+    /**
+     * Removes all occurrences of text enclosed in 【】 from the input string.
+     * @param s - The input string to process.
+     * @returns The string with all occurrences of 【...】 removed.
+     */
+    const removeBrackets = (s: string) => s.replace(/【.*?】/g, '');
+
+    /**
+     * Processes links in the input string based on the EmbedLinks environment variable.
+     * @param s - The input string to process.
+     * @returns The string with links formatted according to the EmbedLinks environment variable.
+     */
+    const processLinks = (s: string) => s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => {
+        if (process.env.EmbedLinks === 'false') {
+            return text === url ? `<${url}>` : `[${text}](<${url}>)`;
+        }
+        return text === url ? url : `[${text}](${url})`;
+    });
+
+    // Remove brackets and then process links.
+    return processLinks(removeBrackets(str));
 }

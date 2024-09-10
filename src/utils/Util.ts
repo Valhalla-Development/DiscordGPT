@@ -15,6 +15,11 @@ interface UserData {
     threadId: string;
 }
 
+interface EntryValue {
+    userId?: string;
+    totalQueries: number;
+}
+
 const keyv = new Keyv({ store: new KeyvSqlite({ uri: 'sqlite://src/data/db.sqlite' }), namespace: 'userData' });
 keyv.on('error', (err) => console.log('[keyv] Connection Error', err));
 
@@ -484,4 +489,36 @@ export async function processString(str: string): Promise<string> {
 
     // Remove brackets and then process links.
     return processLinks(removeBrackets(str));
+}
+
+/**
+ * Iterates through entries from a key-value store, calculates the total queries sum,
+ * and returns the top 10 entries sorted by the number of queries in descending order.
+ *
+ * @returns A Promise that resolves to an object containing the total queries sum and
+ *          an array of the top 10 entries, or an Error if something goes wrong.
+ */
+export async function fetchAllData(): Promise<{ totalQueriesSum: number; top10Entries: EntryValue[] } | Error> {
+    try {
+        const entries: EntryValue[] = [];
+        let totalQueriesSum = 0;
+
+        // Iterate through the key-value store
+        // @ts-expect-error temp
+        for await (const [key, value] of keyv.iterator()) {
+            const entry = { totalQueries: value.totalQueries, userId: key };
+            entries.push(entry);
+            totalQueriesSum += entry.totalQueries;
+        }
+
+        // Return the results: total queries sum and top 10 sorted entries
+        return {
+            totalQueriesSum,
+            top10Entries: entries
+                .sort((a, b) => b.totalQueries - a.totalQueries)
+                .slice(0, 10),
+        };
+    } catch (error) {
+        return error as Error;
+    }
 }

@@ -35,8 +35,8 @@ export class Stats {
             return;
         }
 
-        let userNames: string = '';
-        let queries: string = '';
+        const userNamesArray: string[] = new Array(allData.top10Entries.length).fill('');
+        const queriesArray: string[] = new Array(allData.top10Entries.length).fill('');
 
         await Promise.all(allData.top10Entries.map(async (data, index) => {
             if (data.userId) {
@@ -51,11 +51,14 @@ export class Stats {
                 }
 
                 if (fetchUser) {
-                    userNames += `\`${index + 1}\` ${fetchUser}\n`;
-                    queries += `\`${data.totalQueries}\`\n`;
+                    userNamesArray[index] = `\`${index + 1}\` ${fetchUser}`;
+                    queriesArray[index] = `\`${data.totalQueries}\``;
                 }
             }
         }));
+
+        const userNames = userNamesArray.join('\n');
+        const queries = queriesArray.join('\n');
 
         if (!userNames || !queries) {
             await interaction.reply({ content: 'No data was found.', ephemeral: true });

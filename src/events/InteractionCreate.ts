@@ -2,6 +2,7 @@ import type { ArgsOf, Client } from 'discordx';
 import { Discord, On } from 'discordx';
 import { ChannelType, codeBlock, EmbedBuilder } from 'discord.js';
 import moment from 'moment';
+import 'colors';
 
 @Discord()
 export class InteractionCreate {
@@ -41,8 +42,11 @@ export class InteractionCreate {
                     value: codeBlock('kotlin', `${interaction.user.username} executed the '${executedCommand}' command`),
                 });
 
-                const LoggingNoArgs = `[\x1b[31m${moment().format('LLLL')}\x1b[0m] '\x1b[92m${executedCommand}\x1b[0m' Command was executed by \x1b[31m${interaction.user.username}\x1b[0m (Guild: \x1b[31m${interaction.guild.name}\x1b[0m)`;
-                console.log(LoggingNoArgs);
+                console.log(
+                    `${'~~~~'.bgWhite.black.bold} ${moment().format('MMM D, h:mm A')} ${'~~~~'.bgWhite.black.bold}\n`
+                    + `${'🔧 Command:'.blue.bold} ${executedCommand.yellow.bold}\n${
+                        `${'🔍 Executor:'.green.bold} ${interaction.user.displayName.red.bold} ${'(Guild: '.blue.bold}${interaction.guild.name.magenta.bold})`.blue.bold}\n`,
+                );
 
                 if (process.env.CommandLogging) {
                     const channel = client.channels.cache.get(process.env.CommandLogging);

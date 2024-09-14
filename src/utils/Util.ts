@@ -5,6 +5,7 @@ import 'colors';
 import OpenAI from 'openai';
 import Keyv from 'keyv';
 import KeyvSqlite from '@keyv/sqlite';
+import moment from 'moment';
 
 interface UserData {
     totalQueries: number;
@@ -177,7 +178,11 @@ export async function loadAssistant(
             setTimeout(resolve, ms);
         });
 
-        console.log(`Queued query: ${str}`);
+        console.log(
+            `${'~~~~'.bgWhite.black.bold} ${moment().format('MMM D, h:mm A')} ${'~~~~'.bgWhite.black.bold}\n`
+            + `${'🚀 Query initiated by '.blue.bold}${user.displayName.magenta.bold}\n`
+            + `${'📝 Query: '.cyan.bold}${str.yellow.bold}`,
+        );
 
         /**
          * Check the completion status of the query run.
@@ -191,7 +196,10 @@ export async function loadAssistant(
                 throw new Error(`completion\nStatus: ${retrieve.status}${lastError}`);
             }
 
-            console.log(`Status: ${retrieve.status}`);
+            console.log(retrieve.status === 'completed'
+                ? `${'✅ Status: '.green.bold}${retrieve.status.green.bold}`
+                : `${'⚙️  Status: '.blue.bold}${retrieve.status.yellow.bold}`);
+
             if (retrieve.status !== 'completed') {
                 await sleep(2000);
                 retrieve = await openai.beta.threads.runs.retrieve(thread.id, createRun.id);
@@ -204,7 +212,7 @@ export async function loadAssistant(
         // Get the list of messages in the thread
         const messages = await openai.beta.threads.messages.list(thread.id);
 
-        console.log('Completed query.');
+        console.log(`${'🎉 Completed query for '.green.bold}${user.displayName.magenta.bold}\n`);
 
         // Extract text value from the Assistant's response
         const textValue = (messages.data[0].content[0] as TextContentBlock)?.text?.value;

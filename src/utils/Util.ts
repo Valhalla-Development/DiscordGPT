@@ -1,7 +1,7 @@
 import { codeBlock, Message, User } from 'discord.js';
 import type { Client } from 'discordx';
 import type { TextContentBlock } from 'openai/resources/beta/threads';
-import 'colors';
+import '@colors/colors';
 import OpenAI from 'openai';
 import Keyv from 'keyv';
 import KeyvSqlite from '@keyv/sqlite';
@@ -179,9 +179,9 @@ export async function loadAssistant(
         });
 
         console.log(
-            `${'~~~~'.bgWhite.black.bold} ${moment().format('MMM D, h:mm A')} ${'~~~~'.bgWhite.black.bold}\n`
-            + `${'🚀 Query initiated by '.blue.bold}${user.displayName.magenta.bold}\n`
-            + `${'📝 Query: '.cyan.bold}${str.yellow.bold}`,
+            `${'◆◆◆◆◆◆'.rainbow.bold} ${moment().format('MMM D, h:mm A')} ${reversedRainbow('◆◆◆◆◆◆')}\n`
+            + `${'🚀 Query initiated by '.brightBlue.bold}${user.displayName.underline.brightMagenta.bold}\n`
+            + `${'📝 Query: '.brightBlue.bold}${str.brightYellow.bold}`,
         );
 
         /**
@@ -197,8 +197,8 @@ export async function loadAssistant(
             }
 
             console.log(retrieve.status === 'completed'
-                ? `${'✅ Status: '.green.bold}${retrieve.status.green.bold}`
-                : `${'⚙️  Status: '.blue.bold}${retrieve.status.yellow.bold}`);
+                ? `${'✅ Status: '.brightBlue.bold}${retrieve.status.brightGreen.bold}`
+                : `${'🔄 Status: '.brightBlue.bold}${retrieve.status.brightYellow.bold}`);
 
             if (retrieve.status !== 'completed') {
                 await sleep(2000);
@@ -212,7 +212,7 @@ export async function loadAssistant(
         // Get the list of messages in the thread
         const messages = await openai.beta.threads.messages.list(thread.id);
 
-        console.log(`${'🎉 Completed query for '.green.bold}${user.displayName.magenta.bold}\n`);
+        console.log(`${'🎉 Completed query for '.brightBlue.bold}${user.displayName.underline.brightMagenta.bold}\n`);
 
         // Extract text value from the Assistant's response
         const textValue = (messages.data[0].content[0] as TextContentBlock)?.text?.value;
@@ -529,4 +529,38 @@ export async function fetchAllData(): Promise<{ totalQueriesSum: number; top10En
     } catch (error) {
         return error as Error;
     }
+}
+
+/**
+ * Applies a reversed rainbow effect to the input string.
+ * Each character in the string is colored in a sequence of colors in the reversed rainbow order.
+ *
+ * @param str - The string to which the reversed rainbow effect will be applied.
+ * @returns The input string with each character colored according to the reversed rainbow sequence.
+ */
+export function reversedRainbow(str: string): string {
+    // Define color functions that apply the color to the text
+    const colorFunctions = {
+        red: (text: string) => text.red,
+        magenta: (text: string) => text.magenta,
+        blue: (text: string) => text.blue,
+        green: (text: string) => text.green,
+        yellow: (text: string) => text.yellow,
+    };
+
+    // Type for valid color names based on the colorFunctions object keys
+    type ColorName = keyof typeof colorFunctions;
+
+    // Array of colors to use in the reversed rainbow order
+    const colors: ColorName[] = ['red', 'magenta', 'blue', 'green', 'yellow', 'red'];
+
+    // Map each character of the string to its corresponding color and join them back into a string
+    return str.split('')
+        .map((char, i) => {
+            // Determine the color for the current character
+            const color = colors[i % colors.length];
+            // Apply the color function to the character
+            return colorFunctions[color](char);
+        })
+        .join('');
 }

@@ -2,7 +2,8 @@ import type { ArgsOf, Client } from 'discordx';
 import { Discord, On } from 'discordx';
 import { ChannelType, codeBlock, EmbedBuilder } from 'discord.js';
 import moment from 'moment';
-import 'colors';
+import '@colors/colors';
+import { reversedRainbow } from '../utils/Util.js';
 
 @Discord()
 export class InteractionCreate {
@@ -43,9 +44,9 @@ export class InteractionCreate {
                 });
 
                 console.log(
-                    `${'~~~~'.bgWhite.black.bold} ${moment().format('MMM D, h:mm A')} ${'~~~~'.bgWhite.black.bold}\n`
-                    + `${'🔧 Command:'.blue.bold} ${executedCommand.yellow.bold}\n${
-                        `${'🔍 Executor:'.green.bold} ${interaction.user.displayName.red.bold} ${'(Guild: '.blue.bold}${interaction.guild.name.magenta.bold})`.blue.bold}\n`,
+                    `${'◆◆◆◆◆◆'.rainbow.bold} ${moment().format('MMM D, h:mm A')} ${reversedRainbow('◆◆◆◆◆◆')}\n`
+                    + `${'🔧 Command:'.brightBlue.bold} ${executedCommand.brightYellow.bold}\n${
+                        `${'🔍 Executor:'.brightBlue.bold} ${interaction.user.displayName.underline.brightMagenta.bold} ${'('.gray.bold}${'Guild: '.brightBlue.bold}${interaction.guild.name.underline.brightMagenta.bold}`.brightBlue.bold}${')'.gray.bold}\n`,
                 );
 
                 if (process.env.CommandLogging) {

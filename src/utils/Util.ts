@@ -411,7 +411,7 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
             const epochTime = Math.floor(Number(expiration) / 1000);
 
             // Return a string indicating the reset time of available queries
-            return `It looks like you've reached your query limit for now. Don't worry, your queries will reset in <t:${epochTime}:R>`;
+            return `It looks like you've reached your query limit for now. Don't worry, your queries will reset <t:${epochTime}:R>`;
         }
 
         // User has queries remaining, remove 1 query from the database.

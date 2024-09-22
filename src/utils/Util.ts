@@ -85,13 +85,11 @@ export async function getCommandIds(client: Client): Promise<{ [name: string]: s
 /**
  * Load Assistant function to query the OpenAI API for a response.
  * @param query - The user query to be sent to the Assistant.
- * @param image - Optional image to include in the query
  * @param user - The User for the target.
  * @returns The response text from the Assistant.
  */
 export async function loadAssistant(
     query: string,
-    image: string | null,
     user: User,
 ): Promise<string | string[] | Error | boolean> {
     // Retrieve user's GPT query data from the database.
@@ -155,18 +153,6 @@ export async function loadAssistant(
             role: 'user',
             content: str,
         });
-
-        if (image) {
-            await openai.beta.threads.messages.create(thread.id, {
-                role: 'user',
-                content: [
-                    {
-                        type: 'image_url',
-                        image_url: { url: image },
-                    },
-                ],
-            });
-        }
 
         // Create a run with the Assistant
         const createRun = await openai.beta.threads.runs.create(thread.id, {
@@ -263,10 +249,10 @@ export async function runTTS(
         // Initialize the OpenAI instance using the provided API key from the environment variables.
         const openai = new OpenAI({ apiKey: process.env.OpenAiKey });
 
-        // Request the TTS generation using OpenAI's speech model with the 'nova' voice.
+        // Request the TTS generation using OpenAI's speech model with the 'echo' voice.
         const tts = await openai.audio.speech.create({
             model: 'tts-1',
-            voice: 'nova',
+            voice: 'echo',
             input: str,
         });
 
@@ -443,7 +429,6 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
 /**
  * Runs the GPT assistant for the specified user and content.
  * @param content - The content for the GPT assistant.
- * @param image - Optional image to include in the query
  * @param user - The User object for target.
  * @returns A promise that resolves to an object with content and success properties.
  * - `content`: The response content from the GPT assistant.
@@ -452,7 +437,6 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
  */
 export async function runGPT(
     content: string,
-    image: string | null,
     user: User,
 ): Promise<string[] | string | boolean> {
     // Check if the user has available queries.
@@ -461,7 +445,7 @@ export async function runGPT(
     if (typeof isGptAvailable === 'string') return isGptAvailable;
 
     // Load the Assistant for the message content
-    const response = await loadAssistant(content.trim(), image || null, user);
+    const response = await loadAssistant(content.trim(), user);
 
     // If the typeof response is boolean and true, the user already has an ongoing prompt.
     if (typeof response === 'boolean') return true;

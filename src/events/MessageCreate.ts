@@ -61,11 +61,7 @@ export class MessageCreate {
         const processGPT = async (content: string, user: User, msg: Message) => {
             await message.channel?.sendTyping();
 
-            // Get the first attachment if available and check if it is an image
-            const attachment = message.attachments.first();
-            const img = attachment?.contentType?.startsWith('image/') ? attachment.url : null;
-
-            const response = await runGPT(content, img || null, user);
+            const response = await runGPT(content, user);
 
             // If the response is boolean and true, then the user already has an ongoing query
             if (typeof response === 'boolean' && response) {

@@ -2,7 +2,7 @@ import {
     Client, Discord, Slash, SlashOption,
 } from 'discordx';
 import {
-    ApplicationCommandOptionType, Attachment, codeBlock, CommandInteraction, Message,
+    ApplicationCommandOptionType, codeBlock, CommandInteraction, Message,
 } from 'discord.js';
 import { Category } from '@discordx/utilities';
 import { runGPT } from '../../utils/Util.js';
@@ -13,7 +13,6 @@ export class Ask {
     /**
      * Query the DiscordGPT model
      * @param query - The query for DiscordGPT
-     * @param image - Optional image to include in the query
      * @param interaction - The command interaction.
      * @param client - The Discord client.
      */
@@ -27,23 +26,14 @@ export class Ask {
             minLength: 4,
             maxLength: 100,
         })
-        @SlashOption({
-            description: 'Image',
-            name: 'image',
-            type: ApplicationCommandOptionType.Attachment,
-        })
             query: string,
-            image: Attachment,
             interaction: CommandInteraction,
             client: Client,
     ) {
         await interaction.deferReply();
 
-        // Declare a variable which will hold the image URL if it exists
-        const img = image?.contentType?.startsWith('image/') ? image.url : null;
-
         // Pass the options to run the 'runGPT' function
-        const response = await runGPT(query, img || null, interaction.user);
+        const response = await runGPT(query, interaction.user);
 
         // If the response is boolean and true, then the user already has an ongoing query
         if (typeof response === 'boolean' && response) {

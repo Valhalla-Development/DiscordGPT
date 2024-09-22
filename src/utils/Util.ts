@@ -1,4 +1,6 @@
-import { codeBlock, Message, User } from 'discord.js';
+import {
+    AttachmentBuilder, codeBlock, Message, User,
+} from 'discord.js';
 import type { Client } from 'discordx';
 import type { TextContentBlock } from 'openai/resources/beta/threads';
 import '@colors/colors';
@@ -228,6 +230,50 @@ export async function loadAssistant(
 
         // Length does not exceed the desired target, return string
         return responseText;
+    } catch (error) {
+        console.error(error);
+        return error as Error;
+    }
+}
+/**
+ * Runs the Text-to-Speech (TTS) process.
+ * Converts the provided text (`str`) into speech audio using OpenAI's TTS model.
+ * Returns either an `AttachmentBuilder` containing the audio file, a string indicating an error with availability,
+ * or an `Error` if the TTS generation fails.
+ * @param str - The text to convert to speech.
+ * @param user - The user initiating the request, used to check available TTS queries.
+ * @returns A promise that resolves to an `AttachmentBuilder`, a string (for errors or messages), or an `Error`.
+ */
+export async function runTTS(
+    str: string,
+    user: User,
+): Promise<AttachmentBuilder | string | Error> {
+    // Check if the user has available queries.
+    const isGptAvailable = await checkGptAvailability(user.id);
+
+    // If the user has no available queries, return the error message.
+    if (typeof isGptAvailable === 'string') return isGptAvailable;
+
+    try {
+        console.log(
+            `${'◆◆◆◆◆◆'.rainbow.bold} ${moment().format('MMM D, h:mm A')} ${reversedRainbow('◆◆◆◆◆◆')}\n`
+            + `${'🚀 Text-to-Speech initiated by '.brightBlue.bold}${user.displayName.underline.brightMagenta.bold}`,
+        );
+
+        // Initialize the OpenAI instance using the provided API key from the environment variables.
+        const openai = new OpenAI({ apiKey: process.env.OpenAiKey });
+
+        // Request the TTS generation using OpenAI's speech model with the 'nova' voice.
+        const tts = await openai.audio.speech.create({
+            model: 'tts-1',
+            voice: 'nova',
+            input: str,
+        });
+
+        console.log(`${'🎉 Completed TTS for '.brightBlue.bold}${user.displayName.underline.brightMagenta.bold}\n`);
+
+        // Return the generated speech as an audio attachment (mp3 format).
+        return new AttachmentBuilder(Buffer.from(await tts.arrayBuffer()), { name: 'tts.mp3' });
     } catch (error) {
         console.error(error);
         return error as Error;

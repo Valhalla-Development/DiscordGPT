@@ -270,7 +270,7 @@ export async function runTTS(
             input: str,
         });
 
-        console.log(`${'🎉 Completed TTS for '.brightBlue.bold}${user.displayName.underline.brightMagenta.bold}\n`);
+        console.log(`${'🎉 Completed text-to-speech for '.brightBlue.bold}${user.displayName.underline.brightMagenta.bold}\n`);
 
         // Return the generated speech as an audio attachment (mp3 format).
         return new AttachmentBuilder(Buffer.from(await tts.arrayBuffer()), { name: 'tts.mp3' });

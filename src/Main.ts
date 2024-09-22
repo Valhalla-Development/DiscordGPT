@@ -85,12 +85,12 @@ async function run() {
     const time = 200;
 
     /**
-     * Loads the Mongo events, imports the commands and events, and logs in the client.
+     * Imports the commands and events, and logs in the client.
      * @returns A Promise that resolves with void when everything is loaded sequentially.
      */
     const loadSequentially = async () => {
         try {
-            await importx(`${dirname(import.meta.url)}/{events,commands}/**/*.{ts,js}`);
+            await importx(`${dirname(import.meta.url)}/{events,commands,context}/**/*.{ts,js}`);
             await sleep(time);
             await client.login(process.env.Token as string);
         } catch (error) {

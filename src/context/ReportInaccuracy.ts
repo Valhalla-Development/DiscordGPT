@@ -1,4 +1,6 @@
-import { ContextMenu, Discord, ModalComponent } from 'discordx';
+import {
+    Client, ContextMenu, Discord, ModalComponent,
+} from 'discordx';
 import {
     ActionRowBuilder,
     ApplicationCommandType,
@@ -20,16 +22,26 @@ export class ReportInaccuracy {
     /**
      * Handles the context menu interaction for reporting an inaccuracy.
      * @param interaction - The context menu interaction.
+     * @param client - The Discord client.
      * */
     @ContextMenu({
         name: 'Report Inaccuracy',
         type: ApplicationCommandType.Message,
     })
-    async userHandler(interaction: MessageContextMenuCommandInteraction): Promise<void> {
+    async userHandler(interaction: MessageContextMenuCommandInteraction, client: Client): Promise<void> {
         // Check if reporting is enabled for this server
         if (!process.env.ReportChannel) {
             await interaction.reply({
                 content: '⚠️ Reporting is not enabled on this server.',
+                ephemeral: true,
+            });
+            return;
+        }
+
+        // Ensure the selected message was sent by the bot itself, restricting ReportInaccuracy usage to bot messages.
+        if (interaction.targetMessage.author.id !== client.user?.id) {
+            await interaction.reply({
+                content: `⚠️ Invalid target - reports can only be made for inaccuracies from ${client.user}`,
                 ephemeral: true,
             });
             return;

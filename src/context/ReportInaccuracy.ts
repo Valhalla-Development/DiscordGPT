@@ -16,7 +16,7 @@ import {
 let messageUrl: string = '';
 
 @Discord()
-export class ReportInaccurateInformation {
+export class ReportInaccuracy {
     /**
      * Handles the context menu interaction for reporting an inaccuracy.
      * @param interaction - The context menu interaction.

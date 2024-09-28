@@ -537,16 +537,14 @@ export async function processString(str: string): Promise<string> {
  *          an array of the top 10 entries, or an Error if something goes wrong.
  */
 export async function fetchAllData(): Promise<{ totalQueriesSum: number; top10Entries: EntryValue[] } | Error> {
-    try {
-        const entries: EntryValue[] = [];
-        let totalQueriesSum = 0;
+    const entries: EntryValue[] = [];
+    let totalQueriesSum = 0;
 
-        // Iterate through the key-value store
+    try {
         // @ts-expect-error temp
-        for await (const [key, value] of keyv.iterator()) {
-            const entry = { totalQueries: value.totalQueries, userId: key };
-            entries.push(entry);
-            totalQueriesSum += entry.totalQueries;
+        for await (const [key, { totalQueries }] of keyv.iterator()) {
+            entries.push({ totalQueries, userId: key });
+            totalQueriesSum += totalQueries;
         }
 
         // Return the results: total queries sum and top 10 sorted entries

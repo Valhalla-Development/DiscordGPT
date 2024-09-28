@@ -503,30 +503,15 @@ export async function splitMessages(content: string, length: number): Promise<st
 /**
  * Processes a string by removing specific brackets and formatting links based on environment variables.
  * @param str - The input string to process.
- * @returns A promise that resolves to the processed string.
+ * @returns The processed string.
  */
-export async function processString(str: string): Promise<string> {
-    /**
-     * Removes all occurrences of text enclosed in 【】 from the input string.
-     * @param s - The input string to process.
-     * @returns The string with all occurrences of 【...】 removed.
-     */
-    const removeBrackets = (s: string) => s.replace(/【.*?】/g, '');
+export function processString(str: string): string {
+    const embedLinks = process.env.EmbedLinks !== 'false';
 
-    /**
-     * Processes links in the input string based on the EmbedLinks environment variable.
-     * @param s - The input string to process.
-     * @returns The string with links formatted according to the EmbedLinks environment variable.
-     */
-    const processLinks = (s: string) => s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => {
-        if (process.env.EmbedLinks === 'false') {
-            return text === url ? `<${url}>` : `[${text}](<${url}>)`;
-        }
-        return text === url ? url : `[${text}](${url})`;
-    });
-
-    // Remove brackets and then process links.
-    return processLinks(removeBrackets(str));
+    return str.replace(/【.*?】/g, '')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => (text === url
+            ? embedLinks ? url : `<${url}>`
+            : embedLinks ? `[${text}](${url})` : `[${text}](<${url}>)`));
 }
 
 /**

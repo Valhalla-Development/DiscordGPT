@@ -462,40 +462,21 @@ export async function runGPT(
  * Each chunk is appended with a page number and the total number of chunks.
  * @param content - The input string to be split.
  * @param length - The desired length of each chunk.
- * @returns A promise resolving to an array of strings representing the split content.
+ * @returns An array of strings representing the split content.
  */
-export async function splitMessages(content: string, length: number): Promise<string[]> {
+export function splitMessages(content: string, length: number): string[] {
     const chunks: string[] = [];
     let remainingContent = content.trim();
 
     while (remainingContent.length > 0) {
-        let chunkEnd = length;
+        const chunkEnd = remainingContent.length <= length
+            ? remainingContent.length
+            : remainingContent.lastIndexOf(' ', length) || remainingContent.indexOf(' ', length);
 
-        // If the remaining content is shorter than maxLength, use its length
-        if (remainingContent.length <= length) {
-            chunkEnd = remainingContent.length;
-        } else {
-            // Find the last space within the length limit
-            while (chunkEnd > 0 && remainingContent[chunkEnd - 1] !== ' ') {
-                chunkEnd -= 1;
-            }
-
-            // If no space found, find the next space after length
-            if (chunkEnd === 0) {
-                chunkEnd = remainingContent.indexOf(' ', length);
-                if (chunkEnd === -1) chunkEnd = remainingContent.length; // If no space found, take the whole remaining content
-            }
-        }
-
-        // Extract the chunk
-        const chunk = remainingContent.slice(0, chunkEnd).trim();
-        chunks.push(chunk);
-
-        // Update remaining content
+        chunks.push(remainingContent.slice(0, chunkEnd).trim());
         remainingContent = remainingContent.slice(chunkEnd).trim();
     }
 
-    // Add page numbers to chunks
     const totalChunks = chunks.length;
     return chunks.map((chunk, index) => `${chunk}\n\`${index + 1}\`/\`${totalChunks}\``);
 }

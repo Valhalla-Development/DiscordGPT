@@ -563,34 +563,13 @@ export async function fetchAllData(): Promise<{ totalQueriesSum: number; top10En
 
 /**
  * Applies a reversed rainbow effect to the input string.
- * Each character in the string is colored in a sequence of colors in the reversed rainbow order.
- *
- * @param str - The string to which the reversed rainbow effect will be applied.
- * @returns The input string with each character colored according to the reversed rainbow sequence.
+ * @param str - The string to apply the reversed rainbow effect.
+ * @returns The input string with reversed rainbow coloring.
  */
-export function reversedRainbow(str: string): string {
-    // Define color functions that apply the color to the text
-    const colorFunctions = {
-        red: (text: string) => text.red,
-        magenta: (text: string) => text.magenta,
-        blue: (text: string) => text.blue,
-        green: (text: string) => text.green,
-        yellow: (text: string) => text.yellow,
-    };
-
-    // Type for valid color names based on the colorFunctions object keys
-    type ColorName = keyof typeof colorFunctions;
-
-    // Array of colors to use in the reversed rainbow order
-    const colors: ColorName[] = ['red', 'magenta', 'blue', 'green', 'yellow', 'red'];
-
-    // Map each character of the string to its corresponding color and join them back into a string
-    return str.split('')
-        .map((char, i) => {
-            // Determine the color for the current character
-            const color = colors[i % colors.length];
-            // Apply the color function to the character
-            return colorFunctions[color](char);
-        })
+export const reversedRainbow = (str: string): string => {
+    const colors = ['red', 'magenta', 'blue', 'green', 'yellow', 'red'] as const;
+    return str
+        .split('')
+        .map((char, i) => char[colors[i % colors.length] as keyof typeof char])
         .join('');
-}
+};

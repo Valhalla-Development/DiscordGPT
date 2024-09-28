@@ -13,8 +13,8 @@ interface UserData {
     totalQueries: number;
     queriesRemaining: number;
     expiration: number;
-    whitelisted: number;
-    blacklisted: number;
+    whitelisted: boolean;
+    blacklisted: boolean;
     threadId: string;
 }
 
@@ -312,32 +312,12 @@ export async function setGptQueryData(
 
 /**
  * Retrieves GPT query data for a specific user.
- * @param userId - The ID of the user.
- * @returns A promise that resolves with the retrieved data or `false` if no data is found.
+ * @param userId - The unique identifier of the user.
+ * @returns The user's query data, or false if no data is found.
  */
-export async function getGptQueryData(
-    userId: string,
-): Promise<{ totalQueries: number,
-    queriesRemaining: number; expiration: number; whitelisted: boolean; blacklisted: boolean; threadId: string } | false> {
+export async function getGptQueryData(userId: string): Promise<UserData | false> {
     const data = await keyv.get(userId) as UserData | null;
-
-    // If data exists, convert integer values to booleans and return
-    if (data) {
-        const {
-            totalQueries, queriesRemaining, expiration, whitelisted, blacklisted, threadId,
-        } = data;
-        return {
-            totalQueries,
-            queriesRemaining,
-            expiration,
-            whitelisted: Boolean(whitelisted), // Convert 0 or 1 to boolean
-            blacklisted: Boolean(blacklisted), // Convert 0 or 1 to boolean
-            threadId,
-        };
-    }
-
-    // If no data is found, return false
-    return false;
+    return data || false;
 }
 
 /**

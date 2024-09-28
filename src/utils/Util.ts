@@ -346,66 +346,42 @@ export async function getGptQueryData(
  * @returns A string indicating the reset time or a boolean for query availability.
  */
 export async function checkGptAvailability(userId: string): Promise<string | boolean> {
-    // Variable for rate limit.
-    const { RateLimit } = process.env;
+    // Parse the rate limit from environment variables
+    const RateLimit = Number(process.env.RateLimit);
 
-    // Retrieve user's GPT query data from the database.
+    // Retrieve user's GPT query data from the database
     const userQueryData = await getGptQueryData(userId);
 
+    // Calculate current time and expiration time (24 hours from now)
     const currentTime = new Date();
-    const expirationTime = new Date(currentTime.getTime() + (24 * 60 * 60 * 1000));
+    const expirationTime = new Date(currentTime.getTime() + 24 * 60 * 60 * 1000);
 
-    // User's query data exists.
-    if (userQueryData) {
-        // If the user is blacklisted
-        if (userQueryData.blacklisted) return 'You are currently blacklisted. If you believe this is a mistake, please contact a moderator.';
-
-        // If the user is whitelisted
-        if (userQueryData.whitelisted) {
-            await setGptQueryData(
-                userId,
-                Number(userQueryData.totalQueries) + Number(1),
-                Number(RateLimit),
-                Number(1),
-                userQueryData.whitelisted,
-                userQueryData.blacklisted,
-                userQueryData.threadId,
-            );
-            return true;
-        }
-
-        // User has exhausted their query limit.
-        if (userQueryData.queriesRemaining <= 0) {
-            const expiration = new Date(userQueryData.expiration);
-
-            // 24 hours have passed since the initial entry. Resetting data.
-            if (currentTime > expiration) {
-                await setGptQueryData(
-                    userId,
-                    Number(userQueryData.totalQueries) + Number(1),
-                    Number(RateLimit),
-                    Number(expirationTime),
-                    userQueryData.whitelisted,
-                    userQueryData.blacklisted,
-                    userQueryData.threadId,
-                );
-                return true;
-            }
-
-            // Queries expired, 24 hours not passed.
-            // Convert the expiration time to epoch time
-            const epochTime = Math.floor(Number(expiration) / 1000);
-
-            // Return a string indicating the reset time of available queries
-            return `It looks like you've reached your query limit for now. Don't worry, your queries will reset <t:${epochTime}:R>`;
-        }
-
-        // User has queries remaining, remove 1 query from the database.
+    // If the user has no existing data, create a new entry
+    if (!userQueryData) {
         await setGptQueryData(
             userId,
-            Number(userQueryData.totalQueries) + Number(1),
-            Number(userQueryData.queriesRemaining) - Number(1),
-            Number(userQueryData.expiration) === 1 ? Number(expirationTime) : Number(userQueryData.expiration),
+            1,
+            RateLimit - 1,
+            expirationTime.getTime(),
+            false,
+            false,
+            '',
+        );
+        return true; // User can make a query
+    }
+
+    // If the user is blacklisted, deny access
+    if (userQueryData.blacklisted) {
+        return 'You are currently blacklisted. If you believe this is a mistake, please contact a moderator.';
+    }
+
+    // If the user is whitelisted, allow query and reset their limit
+    if (userQueryData.whitelisted) {
+        await setGptQueryData(
+            userId,
+            userQueryData.totalQueries + 1,
+            RateLimit,
+            1,
             userQueryData.whitelisted,
             userQueryData.blacklisted,
             userQueryData.threadId,
@@ -413,15 +389,37 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
         return true;
     }
 
-    // User has no existing data. Creating a new entry.
+    // Check if the user has exhausted their query limit
+    if (userQueryData.queriesRemaining <= 0) {
+        const expiration = new Date(userQueryData.expiration);
+
+        // If 24 hours have passed since the last query, reset the user's limit
+        if (currentTime > expiration) {
+            await setGptQueryData(
+                userId,
+                userQueryData.totalQueries + 1,
+                RateLimit,
+                expirationTime.getTime(),
+                userQueryData.whitelisted,
+                userQueryData.blacklisted,
+                userQueryData.threadId,
+            );
+            return true;
+        }
+
+        // If the query limit is still active, return a message with the reset time
+        return `It looks like you've reached your query limit for now. Don't worry, your queries will reset <t:${Math.floor(expiration.getTime() / 1000)}:R>`;
+    }
+
+    // User has queries remaining, update their data
     await setGptQueryData(
         userId,
-        Number(1),
-        Number(RateLimit) - Number(1),
-        Number(expirationTime),
-        false,
-        false,
-        '',
+        userQueryData.totalQueries + 1,
+        userQueryData.queriesRemaining - 1,
+        userQueryData.expiration === 1 ? expirationTime.getTime() : userQueryData.expiration,
+        userQueryData.whitelisted,
+        userQueryData.blacklisted,
+        userQueryData.threadId,
     );
     return true;
 }

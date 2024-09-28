@@ -429,31 +429,24 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
 /**
  * Runs the GPT assistant for the specified user and content.
  * @param content - The content for the GPT assistant.
- * @param user - The User object for target.
- * @returns A promise that resolves to an object with content and success properties.
- * - `content`: The response content from the GPT assistant.
- * - `success`: A boolean indicating whether the operation was successful.
- * @throws An error if there is an issue with the GPT assistant or user queries.
+ * @param user - The User object for the target.
+ * @returns A promise that resolves to a string, array of strings, or boolean.
+ * @throws An error if there's an issue with the GPT assistant or user queries.
  */
-export async function runGPT(
-    content: string,
-    user: User,
-): Promise<string[] | string | boolean> {
-    // Check if the user has available queries.
+export async function runGPT(content: string, user: User): Promise<string | string[] | boolean> {
+    // Check if the user has available queries
     const isGptAvailable = await checkGptAvailability(user.id);
-
     if (typeof isGptAvailable === 'string') return isGptAvailable;
 
     // Load the Assistant for the message content
     const response = await loadAssistant(content.trim(), user);
 
-    // If the typeof response is boolean and true, the user already has an ongoing prompt.
-    if (typeof response === 'boolean') return true;
+    // Handle different response types
+    if (typeof response === 'boolean' || typeof response === 'string' || Array.isArray(response)) {
+        return response;
+    }
 
-    // Reply with the Assistant's response
-    if (typeof response === 'string' || Array.isArray(response)) return response;
-
-    // Response was not a string, therefore, is an error
+    // If the response is neither boolean, string, nor array, it's considered an error
     return `An error occurred, please report this to a member of our moderation team.\n${codeBlock('ts', `${response}`)}`;
 }
 

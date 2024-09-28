@@ -269,13 +269,13 @@ export async function runTTS(
 /**
  * Sets GPT query data for a specific user.
  * @param userId - The ID of the user.
- * @param totalQueries - Total queries made
- * @param queriesRemaining - The remaining queries for the user.
- * @param expiration - The expiration timestamp for the data.
- * @param whitelisted - The whitelist status for the user.
- * @param blacklisted - The blacklist status for the user.
- * @param threadId - The thread id for the given user.
- * @returns A promise that resolves with the newly set data.
+ * @param totalQueries - Total number of queries made by the user.
+ * @param queriesRemaining - Number of queries remaining for the user.
+ * @param expiration - Timestamp for when the user's query allowance expires.
+ * @param whitelisted - Whether the user is whitelisted.
+ * @param blacklisted - Whether the user is blacklisted.
+ * @param threadId - The thread ID associated with the user's conversation.
+ * @returns A promise that resolves with the newly set user data.
  */
 export async function setGptQueryData(
     userId: string,
@@ -285,22 +285,9 @@ export async function setGptQueryData(
     whitelisted: boolean,
     blacklisted: boolean,
     threadId: string,
-): Promise<{ totalQueries: number; queriesRemaining: number; expiration: number; whitelisted: boolean; blacklisted: boolean; threadId: string }> {
-    // Helper function to convert boolean to integer
-    const boolToInt = (bool: boolean) => (bool ? 1 : 0);
-
-    // Store the data
-    await keyv.set(userId, {
-        totalQueries,
-        queriesRemaining,
-        expiration,
-        whitelisted: boolToInt(whitelisted),
-        blacklisted: boolToInt(blacklisted),
-        threadId,
-    });
-
-    // Return the data
-    return {
+): Promise<UserData> {
+    // Create a UserData object with the provided parameters
+    const data: UserData = {
         totalQueries,
         queriesRemaining,
         expiration,
@@ -308,6 +295,12 @@ export async function setGptQueryData(
         blacklisted,
         threadId,
     };
+
+    // Store the user data in the key-value store
+    await keyv.set(userId, data);
+
+    // Return the stored data
+    return data;
 }
 
 /**

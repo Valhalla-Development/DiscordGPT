@@ -27,55 +27,32 @@ const keyv = new Keyv({ store: new KeyvSqlite({ uri: 'sqlite://src/data/db.sqlit
 keyv.on('error', (err) => console.log('[keyv] Connection Error', err));
 
 /**
- * Capitalises the first letter of each word in a string.
- * @param string - The string to be capitalised.
- * @returns The capitalised string.
+ * Capitalizes the first letter of each word in a string.
+ * @param str - The string to be capitalized.
+ * @returns The capitalized string.
  */
-export function capitalise(string: string): string {
-    return string.split(' ')
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-}
+export const capitalise = (str: string): string => str.replace(/\b\w/g, (c) => c.toUpperCase());
 
 /**
- * Checks if a message is deletable, and deletes it after a specified amount of time.
- * @param message - The message to check.
- * @param delay - The amount of time to wait before deleting the message, in milliseconds.
- * @returns void
+ * Deletes a message after a specified delay if it's deletable.
+ * @param message - The message to delete.
+ * @param delay - The delay before deletion, in milliseconds.
  */
 export function messageDelete(message: Message, delay: number): void {
-    setTimeout(async () => {
-        try {
-            if (message && message.deletable) {
-                await message.delete();
-            }
-        } catch (error) {
-            // Handle the error gracefully, log it, or perform any necessary actions
-            console.error('Error deleting message:', error);
-        }
+    setTimeout(() => {
+        message.delete().catch((error) => console.error('Error deleting message:', error));
     }, delay);
 }
 
 /**
- * Fetches the registered global application commands and returns an object
- * containing the command names as keys and their corresponding IDs as values.
- * @param client - The Discord Client instance.
- * @returns An object containing command names and their corresponding IDs.
- * If there are no commands or an error occurs, an empty object is returned.
+ * Fetches all registered global application command IDs.
+ * @param client - The Discord client instance.
+ * @returns A record of command names to their corresponding IDs.
  */
-export async function getCommandIds(client: Client): Promise<{ [name: string]: string }> {
+export async function getCommandIds(client: Client): Promise<Record<string, string>> {
     try {
-        // Fetch the registered global application commands
         const commands = await client.application?.commands.fetch();
-
-        if (!commands) {
-            return {};
-        }
-
-        // Create an object to store the command IDs
-        return Object.fromEntries(
-            commands.map((command) => [command.name, command.id]),
-        );
+        return commands ? Object.fromEntries(commands.map((c) => [c.name, c.id])) : {};
     } catch (error) {
         console.error('Error fetching global commands:', error);
         return {};

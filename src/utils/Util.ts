@@ -83,33 +83,26 @@ export async function getCommandIds(client: Client): Promise<{ [name: string]: s
 }
 
 /**
- * Load Assistant function to query the OpenAI API for a response.
- * @param query - The user query to be sent to the Assistant.
- * @param user - The User for the target.
- * @returns The response text from the Assistant.
+ * Loads an AI assistant to process a user query.
+ * @param query - The user's input query string.
+ * @param user - The user object containing user information.
+ * @returns A promise that resolves to either a string, an array of strings,
+ *          a boolean, or an Error object.
  */
 export async function loadAssistant(
     query: string,
     user: User,
 ): Promise<string | string[] | Error | boolean> {
-    // Retrieve user's GPT query data from the database.
     const userQueryData = await getGptQueryData(user.id);
+    const str = query.replace(/<@!?(\d+)>/g, '');
 
-    const str = query.replaceAll(/<@!?(\d+)>/g, '');
-
-    if (str.length < 4) {
-        return 'Please enter a valid query, with a minimum length of 4 characters.';
-    }
+    if (str.length < 4) return 'Please enter a valid query, with a minimum length of 4 characters.';
 
     try {
-        const openai = new OpenAI({
-            apiKey: process.env.OpenAiKey,
-        });
+        const openai = new OpenAI({ apiKey: process.env.OpenAiKey });
+        const assistant = await openai.beta.assistants.retrieve(process.env.AssistantId!);
 
-        // Retrieve the Assistant information
-        const assistant = await openai.beta.assistants.retrieve(`${process.env.AssistantId}`);
-
-        // Fetch or create thread.
+        // Fetch existing thread or create a new one
         let thread: OpenAI.Beta.Threads.Thread;
         try {
             thread = userQueryData && userQueryData.threadId
@@ -119,52 +112,29 @@ export async function loadAssistant(
             thread = await openai.beta.threads.create();
         }
 
-        const {
-            totalQueries, queriesRemaining,
-            expiration, whitelisted, blacklisted, threadId,
-        } = userQueryData || {};
-
-        if (threadId !== thread.id) {
+        // Update user query data if necessary
+        if (userQueryData && userQueryData.threadId !== thread.id) {
             await setGptQueryData(
                 user.id,
-                Number(totalQueries) || 0,
-                Number(queriesRemaining) || 0,
-                Number(expiration) || 0,
-                whitelisted || false,
-                blacklisted || false,
+                Number(userQueryData.totalQueries) || 0,
+                Number(userQueryData.queriesRemaining) || 0,
+                Number(userQueryData.expiration) || 0,
+                userQueryData.whitelisted || false,
+                userQueryData.blacklisted || false,
                 thread.id,
             );
         }
 
-        // This section check if the user has an existing run.
-        let existingRun;
-
-        try {
-            const response = await openai.beta.threads.runs.list(thread.id);
-            existingRun = ['queued', 'in_progress'].includes(response?.data?.[0]?.status) || false;
-        } catch {
-            existingRun = false;
-        }
+        // Check for existing run
+        const existingRun = await openai.beta.threads.runs.list(thread.id)
+            .then((response) => ['queued', 'in_progress'].includes(response?.data?.[0]?.status))
+            .catch(() => false);
 
         if (existingRun) return true;
 
-        // Add a user message to the thread
-        await openai.beta.threads.messages.create(thread.id, {
-            role: 'user',
-            content: str,
-        });
-
-        // Create a run with the Assistant
-        const createRun = await openai.beta.threads.runs.create(thread.id, {
-            assistant_id: assistant.id,
-        });
-
-        let retrieve = await openai.beta.threads.runs.retrieve(thread.id, createRun.id);
-
-        // Define a sleep function
-        const sleep = (ms: number): Promise<void> => new Promise<void>((resolve) => {
-            setTimeout(resolve, ms);
-        });
+        // Create a new message and run
+        await openai.beta.threads.messages.create(thread.id, { role: 'user', content: str });
+        const run = await openai.beta.threads.runs.create(thread.id, { assistant_id: assistant.id });
 
         console.log(
             `${'◆◆◆◆◆◆'.rainbow.bold} ${moment().format('MMM D, h:mm A')} ${reversedRainbow('◆◆◆◆◆◆')}\n`
@@ -172,50 +142,34 @@ export async function loadAssistant(
             + `${'📝 Query: '.brightBlue.bold}${str.brightYellow.bold}`,
         );
 
-        /**
-         * Check the completion status of the query run.
-         */
-        async function checkCompletion() {
-            if (retrieve.status !== 'completed' && retrieve.status !== 'in_progress' && retrieve.status !== 'queued') {
-                // Optional last error message if it exists
-                const lastError = retrieve.last_error ? `\nError Code: ${retrieve.last_error.code}` : '';
-
-                // Throw an error message
-                throw new Error(`completion\nStatus: ${retrieve.status}${lastError}`);
-            }
+        // Wait for completion
+        const waitForCompletion = async (): Promise<void> => {
+            const retrieve = await openai.beta.threads.runs.retrieve(thread.id, run.id);
 
             console.log(retrieve.status === 'completed'
                 ? `${'✅ Status: '.brightBlue.bold}${retrieve.status.brightGreen.bold}`
                 : `${'🔄 Status: '.brightBlue.bold}${retrieve.status.brightYellow.bold}`);
 
-            if (retrieve.status !== 'completed') {
-                await sleep(2000);
-                retrieve = await openai.beta.threads.runs.retrieve(thread.id, createRun.id);
-                await checkCompletion();
+            if (retrieve.status === 'completed') return;
+            if (!['in_progress', 'queued'].includes(retrieve.status)) {
+                throw new Error(`completion\nStatus: ${retrieve.status}${retrieve.last_error ? `\nError Code: ${retrieve.last_error.code}` : ''}`);
             }
-        }
+            await new Promise((resolve) => { setTimeout(resolve, 2000); });
+            await waitForCompletion();
+        };
 
-        await checkCompletion();
-
-        // Get the list of messages in the thread
-        const messages = await openai.beta.threads.messages.list(thread.id);
+        await waitForCompletion();
 
         console.log(`${'🎉 Completed query for '.brightBlue.bold}${user.displayName.underline.brightMagenta.bold}\n`);
 
-        // Extract text value from the Assistant's response
+        // Process and return response
+        const messages = await openai.beta.threads.messages.list(thread.id);
         const textValue = (messages.data[0].content[0] as TextContentBlock)?.text?.value;
+        const responseText = processString(textValue);
 
-        // Process string
-        const responseText = await processString(textValue);
-
-        // If the length of the text is greater than the desired target and does not exceed a desired target
-        // then proceed to split the response into an array of messages
-        if (responseText.length >= 1950) {
-            return await splitMessages(responseText, 1950);
-        }
-
-        // Length does not exceed the desired target, return string
-        return responseText;
+        return responseText.length >= 1950
+            ? splitMessages(responseText, 1950)
+            : responseText;
     } catch (error) {
         console.error(error);
         return error as Error;

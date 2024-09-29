@@ -46,6 +46,9 @@ export class MessageCreate {
                 return false;
             }
 
+            // Check if the message contains a ping that isn't for the bot
+            if (message.mentions.users.size > 0 && !message.mentions.users.has(client.user!.id)) return false;
+
             // Check other conditions
             const chance = Math.random();
             const regex = /^.{5,100}\?$/;

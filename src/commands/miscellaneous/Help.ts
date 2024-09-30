@@ -23,7 +23,7 @@ export class Help {
         const embed = new EmbedBuilder()
             .setColor('#EC645D')
             .setDescription(`Hey, I'm **__${client.user?.username}__**`)
-            .setAuthor({ name: `${client.user?.username} Help`, iconURL: `${interaction.guild?.iconURL()}` })
+            .setAuthor({ name: `${client.user?.username} Help`, iconURL: `${interaction.guild ? interaction.guild?.iconURL() : client.user?.avatarURL()}` })
             .setThumbnail(`${client.user?.displayAvatarURL()}`)
             .setFooter({
                 text: `Bot Version ${process.env.npm_package_version}`,

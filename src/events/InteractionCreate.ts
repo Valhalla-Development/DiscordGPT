@@ -15,13 +15,29 @@ export class InteractionCreate {
     @On({ event: 'interactionCreate' })
     async onInteraction([interaction]: ArgsOf<'interactionCreate'>, client: Client) {
         // Check if the interaction is in a guild and in a guild text channel, and is either a string select menu or a chat input command.
-        if (!interaction || !interaction.guild || !interaction.channel || interaction.channel.type !== ChannelType.GuildText
-            || (!interaction.isStringSelectMenu() && !interaction.isChatInputCommand()
+        if (!interaction || !interaction.channel || (!interaction.isStringSelectMenu() && !interaction.isChatInputCommand()
                 && !interaction.isContextMenuCommand() && !interaction.isButton() && !interaction.isModalSubmit())) return;
+
+        // Skip processing if the interaction is not in a guild (i.e., it's a DM) and DMs are not enabled
+        if (!interaction.guild && process.env.EnableDirectMessages !== 'true') {
+            const replyMsg = process.env.ProjectSupportInvite
+                ? `[${client.user?.username} Discord server](${process.env.ProjectSupportInvite})`
+                : `**${client.user?.username} Discord server**`;
+
+            const embed = new EmbedBuilder().setColor('#EC645D').addFields([
+                {
+                    name: `**${client.user?.username}**`,
+                    value: `To better assist you, please use our bot within the ${replyMsg}.\nHead over there for a seamless experience. See you on the server!`,
+                },
+            ]);
+
+            await interaction.reply({ embeds: [embed] });
+            return;
+        }
 
         // Return if guild is not whitelisted
         const { ServerWhitelist } = process.env;
-        if (ServerWhitelist && !ServerWhitelist.split(',').some((item) => item === interaction.guild?.id.toString())) return;
+        if (interaction.guild && ServerWhitelist && !ServerWhitelist.split(',').some((item) => item === interaction.guild?.id.toString())) return;
 
         try {
             await client.executeInteraction(interaction);
@@ -29,6 +45,8 @@ export class InteractionCreate {
             console.error('Error executing interaction');
             console.error(err);
         }
+
+        if (!interaction.guild || interaction.channel.type !== ChannelType.GuildText) return;
 
         if (process.env.Logging && process.env.Logging.toLowerCase() === 'true') {
             const nowInMs = Date.now();

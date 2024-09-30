@@ -9,9 +9,9 @@ import {
     ButtonStyle,
     CommandInteraction,
     EmbedBuilder,
-    GuildMember,
     GuildMemberRoleManager,
     InteractionResponse,
+    User,
 } from 'discord.js';
 import { Category } from '@discordx/utilities';
 import { getGptQueryData, setGptQueryData } from '../../utils/Util.js';
@@ -19,14 +19,14 @@ import { getGptQueryData, setGptQueryData } from '../../utils/Util.js';
 @Discord()
 @Category('Miscellaneous')
 export class Queries {
-    private member: GuildMember | undefined;
+    private user: User | undefined;
 
     private msg: InteractionResponse | void | undefined;
 
     private isAdmin: boolean | undefined;
 
     private generateEmbed(
-        member: GuildMember,
+        user: User,
         getData: { totalQueries: number, queriesRemaining: number; expiration: number;
             whitelisted: boolean; blacklisted: boolean, threadId: string; },
         client: Client,
@@ -92,8 +92,8 @@ export class Queries {
 
         const embed = new EmbedBuilder()
             .setTitle(`${client.user?.username} - Query Checker`)
-            .setDescription(`Viewing queries for ${member}`)
-            .setThumbnail(member?.displayAvatarURL() || '')
+            .setDescription(`Viewing queries for ${user}`)
+            .setThumbnail(user?.displayAvatarURL() || '')
             .setColor('#EC645D')
             .addFields(...fields);
 
@@ -108,14 +108,14 @@ export class Queries {
             required: false,
             type: ApplicationCommandOptionType.User,
         })
-            user: GuildMember | undefined,
+            targetUser: User | undefined,
             interaction: CommandInteraction,
             client: Client,
     ) {
-        const userId = user || interaction.user;
-        const member = interaction.guild?.members.cache.get(userId.id);
+        const userId = targetUser || interaction.user;
+        const user = await client.users.fetch(targetUser?.id || interaction.user.id);
 
-        if (!member) {
+        if (!user) {
             await interaction.reply({ content: '⚠️ Error fetching member.', ephemeral: true });
             return;
         }
@@ -124,6 +124,7 @@ export class Queries {
         const staffRoles = process.env.StaffRoles?.split(',');
         const isStaff = staffRoles?.some((roleID) => interaction.member?.roles instanceof GuildMemberRoleManager
             && interaction.member.roles.cache.has(roleID));
+
         // Admins defined in env file.
         const adminIds = process.env.AdminIds?.split(',');
         const isAdmin = adminIds?.some((id) => id === interaction.user.id);
@@ -131,14 +132,14 @@ export class Queries {
 
         const getData = await getGptQueryData(userId.id);
 
-        this.member = member;
+        this.user = user;
 
         if (!getData) {
-            await interaction.reply({ content: `⚠️ No data available for ${member}.`, ephemeral: true });
+            await interaction.reply({ content: `⚠️ No data available for ${user}.`, ephemeral: true });
             return;
         }
 
-        const { embed, row } = this.generateEmbed(member, getData, client);
+        const { embed, row } = this.generateEmbed(user, getData, client);
 
         if (isAdmin || (isStaff && interaction.user.id !== userId.id)) {
             this.msg = await interaction.reply({ embeds: [embed], components: [row] });
@@ -149,7 +150,7 @@ export class Queries {
 
     @ButtonComponent({ id: 'resetButton' })
     async resetButtonClicked(interaction: ButtonInteraction, client: Client) {
-        const { member, msg } = this;
+        const { user, msg } = this;
 
         // Return if the interaction and msg id do not match.
         if (interaction.message.interaction?.id !== msg?.id) return interaction.deferUpdate();
@@ -176,9 +177,9 @@ export class Queries {
                 value: '**◎ Error:** No data to reset.',
             });
 
-        if (!member) return interaction.reply({ ephemeral: true, embeds: [noData] });
+        if (!user) return interaction.reply({ ephemeral: true, embeds: [noData] });
 
-        const db = await getGptQueryData(member.id);
+        const db = await getGptQueryData(user.id);
 
         if (!db) return interaction.reply({ ephemeral: true, embeds: [noData] });
 
@@ -187,7 +188,7 @@ export class Queries {
                 .setColor('#EC645D')
                 .addFields({
                     name: `**${client.user?.username} - Query Checker**`,
-                    value: `**◎ Error:** ${member} is ${db.whitelisted ? 'whitelisted.' : 'blacklisted.'}`,
+                    value: `**◎ Error:** ${user} is ${db.whitelisted ? 'whitelisted.' : 'blacklisted.'}`,
                 });
 
             await interaction.reply({ ephemeral: true, embeds: [embed] });
@@ -198,7 +199,7 @@ export class Queries {
 
         // Reset cooldown
         const newData = await setGptQueryData(
-            member.id,
+            user.id,
             db.totalQueries,
             Number(RateLimit),
             Number(1),
@@ -208,7 +209,7 @@ export class Queries {
         );
 
         if (msg) {
-            const { embed, row } = this.generateEmbed(member, newData, client);
+            const { embed, row } = this.generateEmbed(user, newData, client);
 
             await msg.edit({ embeds: [embed], components: [row] });
             await interaction.deferUpdate();
@@ -222,7 +223,7 @@ export class Queries {
      */
     @ButtonComponent({ id: 'whitelistButton' })
     async whitelistButtonClicked(interaction: ButtonInteraction, client: Client) {
-        const { member, msg } = this;
+        const { user, msg } = this;
 
         // Return if the interaction and msg id do not match.
         if (interaction.message.interaction?.id !== msg?.id) return interaction.deferUpdate();
@@ -249,16 +250,16 @@ export class Queries {
                 value: '**◎ Error:** No data to reset.',
             });
 
-        if (!member) return interaction.reply({ ephemeral: true, embeds: [noData] });
+        if (!user) return interaction.reply({ ephemeral: true, embeds: [noData] });
 
-        const db = await getGptQueryData(member.id);
+        const db = await getGptQueryData(user.id);
 
         let newData;
 
         if (db) {
             // Update whitelist status
             newData = await setGptQueryData(
-                member.id,
+                user.id,
                 db.totalQueries,
                 Number(RateLimit),
                 Number(1),
@@ -269,7 +270,7 @@ export class Queries {
         } else {
             // User has no existing data. Creating a new entry.
             newData = await setGptQueryData(
-                member.id,
+                user.id,
                 Number(1),
                 Number(RateLimit) - Number(1),
                 Number(1),
@@ -280,7 +281,7 @@ export class Queries {
         }
 
         if (msg) {
-            const { embed, row } = this.generateEmbed(member, newData, client);
+            const { embed, row } = this.generateEmbed(user, newData, client);
 
             await msg.edit({ embeds: [embed], components: [row] });
             await interaction.deferUpdate();
@@ -294,7 +295,7 @@ export class Queries {
      */
     @ButtonComponent({ id: 'blacklistButton' })
     async blacklistButtonClicked(interaction: ButtonInteraction, client: Client) {
-        const { member, msg } = this;
+        const { user, msg } = this;
 
         // Return if the interaction and msg id do not match.
         if (interaction.message.interaction?.id !== msg?.id) return interaction.deferUpdate();
@@ -321,16 +322,16 @@ export class Queries {
                 value: '**◎ Error:** No data to reset.',
             });
 
-        if (!member) return interaction.reply({ ephemeral: true, embeds: [noData] });
+        if (!user) return interaction.reply({ ephemeral: true, embeds: [noData] });
 
-        const db = await getGptQueryData(member.id);
+        const db = await getGptQueryData(user.id);
 
         let newData;
 
         if (db) {
             // Update blacklist status
             newData = await setGptQueryData(
-                member.id,
+                user.id,
                 db.totalQueries,
                 Number(RateLimit),
                 Number(1),
@@ -341,7 +342,7 @@ export class Queries {
         } else {
             // User has no existing data. Creating a new entry.
             newData = await setGptQueryData(
-                member.id,
+                user.id,
                 Number(1),
                 Number(RateLimit) - Number(1),
                 Number(1),
@@ -352,7 +353,7 @@ export class Queries {
         }
 
         if (msg) {
-            const { embed, row } = this.generateEmbed(member, newData, client);
+            const { embed, row } = this.generateEmbed(user, newData, client);
 
             await msg.edit({ embeds: [embed], components: [row] });
             await interaction.deferUpdate();
@@ -366,7 +367,7 @@ export class Queries {
      */
     @ButtonComponent({ id: 'deleteThreadButton' })
     async deleteThreadButtonClicked(interaction: ButtonInteraction, client: Client) {
-        const { member, msg } = this;
+        const { user, msg } = this;
 
         // Return if the interaction and msg id do not match.
         if (interaction.message.interaction?.id !== msg?.id) return interaction.deferUpdate();
@@ -391,15 +392,15 @@ export class Queries {
                 value: '**◎ Error:** No data to reset.',
             });
 
-        if (!member) return interaction.reply({ ephemeral: true, embeds: [noData] });
+        if (!user) return interaction.reply({ ephemeral: true, embeds: [noData] });
 
-        const db = await getGptQueryData(member.id);
+        const db = await getGptQueryData(user.id);
 
         if (!db) return interaction.reply({ ephemeral: true, embeds: [noData] });
 
         // Delete thread id
         const newData = await setGptQueryData(
-            member.id,
+            user.id,
             Number(db.totalQueries) || 0,
             Number(db.queriesRemaining) || 0,
             Number(db.expiration) || 0,
@@ -409,7 +410,7 @@ export class Queries {
         );
 
         if (msg) {
-            const { embed, row } = this.generateEmbed(member, newData, client);
+            const { embed, row } = this.generateEmbed(user, newData, client);
 
             await msg.edit({ embeds: [embed], components: [row] });
             await interaction.deferUpdate();

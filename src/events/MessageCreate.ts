@@ -97,6 +97,10 @@ export class MessageCreate {
 
                 const isBotReply = repliedMessage.author.id === client.user?.id;
 
+                const strippedContent = message.content.replace(/<@!?(\d+)>/g, '').trim();
+
+                if (isBotReply && strippedContent.length === 0) return;
+
                 if (isBotReply && message.author.id !== client.user?.id) {
                     await processGPT(message.content, message.author, message);
                 } else if (message.mentions.has(`${client.user?.id}`) && !message.author.bot) {

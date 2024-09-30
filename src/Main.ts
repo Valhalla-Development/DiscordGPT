@@ -75,7 +75,7 @@ async function run() {
         if (process.env[v] !== 'true' && process.env[v] !== 'false') throw new Error(invalidBool(v));
     });
 
-    if (process.env.ENABLE_LOGGING === 'true' && (!process.env.ERROR_LOGGING_CHANNEL || !process.env.COMMAND_LOGGING_CHANNEL)) {
+    if (process.env.ENABLE_LOGGING === 'true' && (!process.env.ERROR_LOGGING_CHANNEL && !process.env.COMMAND_LOGGING_CHANNEL)) {
         throw new Error('ERROR_LOGGING_CHANNEL and COMMAND_LOGGING_CHANNEL are required when logging is enabled.');
     }
 

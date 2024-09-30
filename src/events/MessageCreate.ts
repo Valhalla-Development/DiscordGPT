@@ -44,11 +44,11 @@ export class MessageCreate {
 
         // Handle DMs
         if (!message.guild) {
-            if (process.env.EnableDirectMessages === 'true') {
+            if (process.env.ENABLE_DIRECT_MESSAGES === 'true') {
                 await processGPT(message.content, message.author, message);
             } else {
-                const replyMsg = process.env.ProjectSupportInvite
-                    ? `[${client.user?.username} Discord server](${process.env.ProjectSupportInvite})`
+                const replyMsg = process.env.SUPPORT_SERVER_INVITE
+                    ? `[${client.user?.username} Discord server](${process.env.SUPPORT_SERVER_INVITE})`
                     : `**${client.user?.username} Discord server**`;
 
                 const embed = new EmbedBuilder().setColor('#EC645D').addFields([
@@ -64,12 +64,12 @@ export class MessageCreate {
         }
 
         // Return if guild is not whitelisted
-        const { ServerWhitelist } = process.env;
-        if (ServerWhitelist && !ServerWhitelist.split(',').some((item) => item === message.guild?.id.toString())) return;
+        const { ALLOWED_SERVER_IDS } = process.env;
+        if (ALLOWED_SERVER_IDS && !ALLOWED_SERVER_IDS.split(',').some((item) => item === message.guild?.id.toString())) return;
 
         // Function to check whether the bot should respond to the message.
         const shouldRespond = () => {
-            const excludedChannels = process.env.ExcludedChannels?.split(',') ?? [];
+            const excludedChannels = process.env.EXCLUDED_CHANNEL_IDS?.split(',') ?? [];
             if (excludedChannels.includes(message.channel.id)) return false;
 
             if (message.mentions.users.size > 0 && !message.mentions.users.has(client.user!.id)) return false;

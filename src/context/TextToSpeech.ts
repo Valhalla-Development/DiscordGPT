@@ -16,7 +16,7 @@ export class TextToSpeech {
     })
     async messageHandler(interaction: MessageContextMenuCommandInteraction, client: Client): Promise<void> {
         // Check if TTS is disabled via the environment variable.
-        if (process.env.TTS !== 'true') {
+        if (process.env.ENABLE_TTS !== 'true') {
             await interaction.reply({
                 content: '⚠️ TTS not enabled - Text to speech is not enabled in this server.',
                 ephemeral: true,

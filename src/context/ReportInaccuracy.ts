@@ -30,7 +30,7 @@ export class ReportInaccuracy {
     })
     async userHandler(interaction: MessageContextMenuCommandInteraction, client: Client): Promise<void> {
         // Check if reporting is enabled for this server
-        if (!process.env.ReportChannel) {
+        if (!process.env.REPORT_CHANNEL_ID) {
             await interaction.reply({
                 content: '⚠️ Reporting is not enabled on this server.',
                 ephemeral: true,
@@ -48,7 +48,7 @@ export class ReportInaccuracy {
         }
 
         // Get the configured report channel
-        const channel = interaction.guild?.channels.cache.get(process.env.ReportChannel);
+        const channel = interaction.guild?.channels.cache.get(process.env.REPORT_CHANNEL_ID);
 
         // Validate the channel
         if (!channel || channel.type !== ChannelType.GuildText) {
@@ -96,7 +96,7 @@ export class ReportInaccuracy {
     async handleModalSubmit(interaction: ModalSubmitInteraction): Promise<void> {
         try {
             // Get the report channel
-            const channel = interaction.guild?.channels.cache.get(process.env.ReportChannel!) as GuildTextBasedChannel;
+            const channel = interaction.guild?.channels.cache.get(process.env.REPORT_CHANNEL_ID!) as GuildTextBasedChannel;
 
             // Send the report to the designated channel
             await channel.send(`Inaccuracy reported by ${interaction.user} *(${messageUrl})*\n\nDescription:\n${codeBlock('text', interaction.fields.getTextInputValue('modalField'))}`);

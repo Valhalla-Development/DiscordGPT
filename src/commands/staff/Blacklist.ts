@@ -42,7 +42,7 @@ export class Blacklist {
         interaction: CommandInteraction,
     ) {
         // Check if command was executed by an admin defined in the environment variable.
-        const adminIds = process.env.AdminIds?.split(',');
+        const adminIds = process.env.ADMIN_USER_IDS?.split(',');
         const isAdmin = adminIds?.some((id) => id === interaction.user.id);
 
         if (interaction.user.id === user.id && !isAdmin) {
@@ -53,7 +53,7 @@ export class Blacklist {
             return;
         }
 
-        const { RateLimit } = process.env;
+        const { MAX_QUERIES_LIMIT } = process.env;
 
         // Fetch the user's data
         const getDb = await getGptQueryData(user.id);
@@ -78,7 +78,7 @@ export class Blacklist {
             await setGptQueryData(
                 user.id,
                 getDb ? Number(getDb.totalQueries) : 0,
-                Number(RateLimit),
+                Number(MAX_QUERIES_LIMIT),
                 Number(1),
                 false,
                 true,
@@ -102,7 +102,7 @@ export class Blacklist {
             await setGptQueryData(
                 user.id,
                 Number(getDb.totalQueries),
-                Number(RateLimit),
+                Number(MAX_QUERIES_LIMIT),
                 Number(1),
                 false,
                 false,

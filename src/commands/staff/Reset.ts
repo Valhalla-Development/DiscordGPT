@@ -29,7 +29,7 @@ export class Reset {
             interaction: CommandInteraction,
     ) {
         // Check if command was executed by an admin defined in the environment variable.
-        const adminIds = process.env.AdminIds?.split(',');
+        const adminIds = process.env.ADMIN_USER_IDS?.split(',');
         const isAdmin = adminIds?.some((id) => id === interaction.user.id);
 
         if (interaction.user.id === user.id && !isAdmin) {
@@ -37,7 +37,7 @@ export class Reset {
             return;
         }
 
-        const { RateLimit } = process.env;
+        const { MAX_QUERIES_LIMIT } = process.env;
 
         // Fetch the user's data
         const db = await getGptQueryData(user.id);
@@ -52,13 +52,13 @@ export class Reset {
         }
 
         // User has data, but has not used any queries.
-        if (db.queriesRemaining === Number(RateLimit)) return interaction.reply({ ephemeral: true, content: `⚠️ ${user} has not used any available queries.` });
+        if (db.queriesRemaining === Number(MAX_QUERIES_LIMIT)) return interaction.reply({ ephemeral: true, content: `⚠️ ${user} has not used any available queries.` });
 
         // Reset cooldown
         await setGptQueryData(
             user.id,
             db.totalQueries,
-            Number(RateLimit),
+            Number(MAX_QUERIES_LIMIT),
             Number(1),
             db.whitelisted,
             db.blacklisted,

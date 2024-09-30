@@ -42,8 +42,8 @@ export class Queries {
         });
 
         if (!getData.whitelisted && !getData.blacklisted) {
-            const remaining = `${Number(process.env.RateLimit) - Number(getData.queriesRemaining)}/${process.env.RateLimit}`;
-            const resetValue = getData.queriesRemaining === Number(process.env.RateLimit) ? 'N/A' : `<t:${epochTime}>`;
+            const remaining = `${Number(process.env.MAX_QUERIES_LIMIT) - Number(getData.queriesRemaining)}/${process.env.MAX_QUERIES_LIMIT}`;
+            const resetValue = getData.queriesRemaining === Number(process.env.MAX_QUERIES_LIMIT) ? 'N/A' : `<t:${epochTime}>`;
             fields.push(
                 {
                     name: 'Queries Used',
@@ -121,12 +121,12 @@ export class Queries {
         }
 
         // Staff roles defined in env file.
-        const staffRoles = process.env.StaffRoles?.split(',');
+        const staffRoles = process.env.STAFF_ROLE_IDS?.split(',');
         const isStaff = staffRoles?.some((roleID) => interaction.member?.roles instanceof GuildMemberRoleManager
             && interaction.member.roles.cache.has(roleID));
 
         // Admins defined in env file.
-        const adminIds = process.env.AdminIds?.split(',');
+        const adminIds = process.env.ADMIN_USER_IDS?.split(',');
         const isAdmin = adminIds?.some((id) => id === interaction.user.id);
         this.isAdmin = isAdmin;
 
@@ -168,7 +168,7 @@ export class Queries {
             return;
         }
 
-        const { RateLimit } = process.env;
+        const { MAX_QUERIES_LIMIT } = process.env;
 
         const noData = new EmbedBuilder()
             .setColor('#EC645D')
@@ -195,13 +195,13 @@ export class Queries {
             return;
         }
 
-        if (db.queriesRemaining === Number(RateLimit)) return interaction.reply({ ephemeral: true, embeds: [noData] });
+        if (db.queriesRemaining === Number(MAX_QUERIES_LIMIT)) return interaction.reply({ ephemeral: true, embeds: [noData] });
 
         // Reset cooldown
         const newData = await setGptQueryData(
             user.id,
             db.totalQueries,
-            Number(RateLimit),
+            Number(MAX_QUERIES_LIMIT),
             Number(1),
             db.whitelisted,
             db.blacklisted,
@@ -241,7 +241,7 @@ export class Queries {
             return;
         }
 
-        const { RateLimit } = process.env;
+        const { MAX_QUERIES_LIMIT } = process.env;
 
         const noData = new EmbedBuilder()
             .setColor('#EC645D')
@@ -261,7 +261,7 @@ export class Queries {
             newData = await setGptQueryData(
                 user.id,
                 db.totalQueries,
-                Number(RateLimit),
+                Number(MAX_QUERIES_LIMIT),
                 Number(1),
                 !db.whitelisted,
                 false,
@@ -272,7 +272,7 @@ export class Queries {
             newData = await setGptQueryData(
                 user.id,
                 Number(1),
-                Number(RateLimit) - Number(1),
+                Number(MAX_QUERIES_LIMIT) - Number(1),
                 Number(1),
                 true,
                 false,
@@ -313,7 +313,7 @@ export class Queries {
             return;
         }
 
-        const { RateLimit } = process.env;
+        const { MAX_QUERIES_LIMIT } = process.env;
 
         const noData = new EmbedBuilder()
             .setColor('#EC645D')
@@ -333,7 +333,7 @@ export class Queries {
             newData = await setGptQueryData(
                 user.id,
                 db.totalQueries,
-                Number(RateLimit),
+                Number(MAX_QUERIES_LIMIT),
                 Number(1),
                 false,
                 !db.blacklisted,
@@ -344,7 +344,7 @@ export class Queries {
             newData = await setGptQueryData(
                 user.id,
                 Number(1),
-                Number(RateLimit) - Number(1),
+                Number(MAX_QUERIES_LIMIT) - Number(1),
                 Number(1),
                 false,
                 true,

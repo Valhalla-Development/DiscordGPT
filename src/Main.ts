@@ -24,10 +24,10 @@ process.on('unhandledRejection', async (error) => {
     if (!error || !(error instanceof Error) || !error.stack) return;
     console.error(error.stack);
 
-    if (process.env.Logging && process.env.Logging.toLowerCase() === 'true') {
-        if (!process.env.LoggingChannel) return;
+    if (process.env.ENABLE_LOGGING && process.env.ENABLE_LOGGING.toLowerCase() === 'true') {
+        if (!process.env.ERROR_LOGGING_CHANNEL) return;
 
-        const channel = client.channels.cache.get(process.env.LoggingChannel);
+        const channel = client.channels.cache.get(process.env.ERROR_LOGGING_CHANNEL);
         if (!channel || channel.type !== ChannelType.GuildText) return;
 
         const typeOfError = error.stack.split(':')[0];
@@ -61,18 +61,23 @@ process.on('unhandledRejection', async (error) => {
  * @throws An Error if any required environment variables are missing or invalid.
  */
 async function run() {
-    const missingVariableError = (variable: string) => `The ${variable} environment variable is missing.`;
-    const invalidLoggingValueError = 'The Logging environment variable must be "true" or "false".';
-    const invalidLoggingChannelError = 'The LoggingChannel environment variable is required when logging is enabled.';
+    const missingVar = (v: string) => `The ${v} environment variable is missing.`;
+    const invalidBool = (v: string) => `${v} must be "true" or "false".`;
 
-    if (!process.env.Token) throw new Error(missingVariableError('Token'));
-    if (process.env.Logging === 'true' && !process.env.LoggingChannel) throw new Error(invalidLoggingChannelError);
-    if (process.env.Logging !== 'true' && process.env.Logging !== 'false') throw new Error(invalidLoggingValueError);
-    if (!process.env.OpenAiKey) throw new Error(missingVariableError('OpenAiKey'));
-    if (!process.env.AssistantId) throw new Error(missingVariableError('AssistantId'));
-    if (!process.env.RateLimit) throw new Error(missingVariableError('RateLimit'));
-    if (!process.env.AdminIds) throw new Error(missingVariableError('AdminIds'));
-    if (!process.env.StaffRoles) throw new Error(missingVariableError('StaffRoles'));
+    const required = [
+        'BOT_TOKEN', 'OPENAI_API_KEY', 'OPENAI_ASSISTANT_ID', 'MAX_QUERIES_LIMIT',
+        'ADMIN_USER_IDS', 'STAFF_ROLE_IDS',
+    ];
+    const booleans = ['ENABLE_DIRECT_MESSAGES', 'ENABLE_LOGGING', 'ENABLE_EMBED_LINKS', 'ENABLE_TTS'];
+
+    required.forEach((v) => { if (!process.env[v]) throw new Error(missingVar(v)); });
+    booleans.forEach((v) => {
+        if (process.env[v] !== 'true' && process.env[v] !== 'false') throw new Error(invalidBool(v));
+    });
+
+    if (process.env.ENABLE_LOGGING === 'true' && (!process.env.ERROR_LOGGING_CHANNEL || !process.env.COMMAND_LOGGING_CHANNEL)) {
+        throw new Error('ERROR_LOGGING_CHANNEL and COMMAND_LOGGING_CHANNEL are required when logging is enabled.');
+    }
 
     /**
      * Delays the execution of the function for a specified time in milliseconds.
@@ -92,7 +97,7 @@ async function run() {
         try {
             await importx(`${dirname(import.meta.url)}/{events,commands,context}/**/*.{ts,js}`);
             await sleep(time);
-            await client.login(process.env.Token as string);
+            await client.login(process.env.BOT_TOKEN as string);
         } catch (error) {
             console.error('An error occurred while initializing the bot:', error);
         }

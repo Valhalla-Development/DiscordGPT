@@ -38,7 +38,7 @@ export class Help {
         ));
 
         // If the user is not staff, filter out the staff command menu
-        const staffRoles = process.env.StaffRoles?.split(',');
+        const staffRoles = process.env.STAFF_ROLE_IDS?.split(',');
         const isStaff = staffRoles?.some((roleID) => interaction.member?.roles instanceof GuildMemberRoleManager
             && interaction.member.roles.cache.has(roleID));
         if (!isStaff) {

@@ -76,8 +76,8 @@ export async function loadAssistant(
     if (str.length < 4) return 'Please enter a valid query, with a minimum length of 4 characters.';
 
     try {
-        const openai = new OpenAI({ apiKey: process.env.OpenAiKey });
-        const assistant = await openai.beta.assistants.retrieve(process.env.AssistantId!);
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const assistant = await openai.beta.assistants.retrieve(process.env.OPENAI_ASSISTANT_ID!);
 
         // Fetch existing thread or create a new one
         let thread: OpenAI.Beta.Threads.Thread;
@@ -172,7 +172,7 @@ export async function runTTS(str: string, user: User): Promise<AttachmentBuilder
             + `${'🚀 Text-to-Speech initiated by '.brightBlue.bold}${user.displayName.underline.brightMagenta.bold}`);
 
         // Initialize OpenAI client
-        const openai = new OpenAI({ apiKey: process.env.OpenAiKey });
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
         // Generate TTS using OpenAI's API
         const tts = await openai.audio.speech.create({
@@ -246,7 +246,7 @@ export async function getGptQueryData(userId: string): Promise<UserData | false>
  */
 export async function checkGptAvailability(userId: string): Promise<string | boolean> {
     // Parse the rate limit from environment variables
-    const RateLimit = Number(process.env.RateLimit);
+    const MAX_QUERIES_LIMIT = Number(process.env.MAX_QUERIES_LIMIT);
 
     // Retrieve user's GPT query data from the database
     const userQueryData = await getGptQueryData(userId);
@@ -260,7 +260,7 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
         await setGptQueryData(
             userId,
             1,
-            RateLimit - 1,
+            MAX_QUERIES_LIMIT - 1,
             expirationTime.getTime(),
             false,
             false,
@@ -279,7 +279,7 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
         await setGptQueryData(
             userId,
             userQueryData.totalQueries + 1,
-            RateLimit,
+            MAX_QUERIES_LIMIT,
             1,
             userQueryData.whitelisted,
             userQueryData.blacklisted,
@@ -297,7 +297,7 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
             await setGptQueryData(
                 userId,
                 userQueryData.totalQueries + 1,
-                RateLimit,
+                MAX_QUERIES_LIMIT,
                 expirationTime.getTime(),
                 userQueryData.whitelisted,
                 userQueryData.blacklisted,
@@ -377,7 +377,7 @@ export function splitMessages(content: string, length: number): string[] {
  * @returns The processed string.
  */
 export function processString(str: string): string {
-    const embedLinks = process.env.EmbedLinks !== 'false';
+    const embedLinks = process.env.ENABLE_EMBED_LINKS !== 'false';
 
     return str.replace(/【.*?】/g, '')
         .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => (text === url

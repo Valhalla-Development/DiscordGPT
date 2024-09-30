@@ -19,9 +19,9 @@ export class InteractionCreate {
                 && !interaction.isContextMenuCommand() && !interaction.isButton() && !interaction.isModalSubmit())) return;
 
         // Skip processing if the interaction is not in a guild (i.e., it's a DM) and DMs are not enabled
-        if (!interaction.guild && process.env.EnableDirectMessages !== 'true') {
-            const replyMsg = process.env.ProjectSupportInvite
-                ? `[${client.user?.username} Discord server](${process.env.ProjectSupportInvite})`
+        if (!interaction.guild && process.env.ENABLE_DIRECT_MESSAGES !== 'true') {
+            const replyMsg = process.env.SUPPORT_SERVER_INVITE
+                ? `[${client.user?.username} Discord server](${process.env.SUPPORT_SERVER_INVITE})`
                 : `**${client.user?.username} Discord server**`;
 
             const embed = new EmbedBuilder().setColor('#EC645D').addFields([
@@ -36,8 +36,8 @@ export class InteractionCreate {
         }
 
         // Return if guild is not whitelisted
-        const { ServerWhitelist } = process.env;
-        if (interaction.guild && ServerWhitelist && !ServerWhitelist.split(',').some((item) => item === interaction.guild?.id.toString())) return;
+        const { ALLOWED_SERVER_IDS } = process.env;
+        if (interaction.guild && ALLOWED_SERVER_IDS && !ALLOWED_SERVER_IDS.split(',').some((item) => item === interaction.guild?.id.toString())) return;
 
         try {
             await client.executeInteraction(interaction);
@@ -48,7 +48,7 @@ export class InteractionCreate {
 
         if (!interaction.guild || interaction.channel.type !== ChannelType.GuildText) return;
 
-        if (process.env.Logging && process.env.Logging.toLowerCase() === 'true') {
+        if (process.env.ENABLE_LOGGING && process.env.ENABLE_LOGGING.toLowerCase() === 'true') {
             const nowInMs = Date.now();
             const nowInSecond = Math.round(nowInMs / 1000);
 
@@ -66,8 +66,8 @@ export class InteractionCreate {
                         `${'🔍 Executor:'.brightBlue.bold} ${interaction.user.displayName.underline.brightMagenta.bold} ${'('.gray.bold}${'Guild: '.brightBlue.bold}${interaction.guild.name.underline.brightMagenta.bold}`.brightBlue.bold}${')'.gray.bold}\n`,
                 );
 
-                if (process.env.CommandLogging) {
-                    const channel = client.channels.cache.get(process.env.CommandLogging);
+                if (process.env.COMMAND_LOGGING_CHANNEL) {
+                    const channel = client.channels.cache.get(process.env.COMMAND_LOGGING_CHANNEL);
                     if (channel && channel.type === ChannelType.GuildText) {
                         channel.send({ embeds: [logEmbed] });
                     }
@@ -86,8 +86,8 @@ export class InteractionCreate {
                         `${'🔍 Executor:'.brightBlue.bold} ${interaction.user.displayName.underline.brightMagenta.bold} ${'('.gray.bold}${'Guild: '.brightBlue.bold}${interaction.guild.name.underline.brightMagenta.bold}`.brightBlue.bold}${')'.gray.bold}\n`,
                 );
 
-                if (process.env.CommandLogging) {
-                    const channel = client.channels.cache.get(process.env.CommandLogging);
+                if (process.env.COMMAND_LOGGING_CHANNEL) {
+                    const channel = client.channels.cache.get(process.env.COMMAND_LOGGING_CHANNEL);
                     if (channel && channel.type === ChannelType.GuildText) {
                         channel.send({ embeds: [logEmbed] });
                     }

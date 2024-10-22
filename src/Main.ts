@@ -12,6 +12,7 @@ const client = new Client({
         IntentsBitField.Flags.DirectMessages],
     partials: [Partials.Channel],
     silent: true,
+    botGuilds: process.env.GUILDS ? process.env.GUILDS.split(',') : undefined,
 });
 
 /**

@@ -12,9 +12,9 @@
   "type": "module",
   "main": "build/Main.js",
   "scripts": {
-    "audit": "eslint . --format codeframe",
-    "dev": "tsc-watch --onSuccess \"node ./build/Main.js\"",
-    "start": "tsc && node build/Main.js"
+    "audit": "eslint . --ext .ts --format codeframe --max-warnings 0",
+    "dev": "tsc-watch --onSuccess \"node ./build/Main.js\" --onFailure \"echo Compilation failed\"",
+    "start": "rm -rf build && tsc && node build/Main.js"
   },
   "dependencies": {
     "@colors/colors": "^1.6.0",

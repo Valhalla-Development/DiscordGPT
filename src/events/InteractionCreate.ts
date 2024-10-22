@@ -57,12 +57,12 @@ export class InteractionCreate {
 
             const now = Date.now();
             const nowInSeconds = Math.floor(now / 1000);
-            const executedCommand = interaction.toString();
+            const executedCommand = interaction.isChatInputCommand() ? interaction.toString() : interaction.isContextMenuCommand() ? interaction.commandName : '';
 
             // Embed logging
             const logEmbed = new EmbedBuilder()
                 .setColor('#e91e63')
-                .setTitle('Command Executed')
+                .setTitle(`${interaction.isChatInputCommand() ? 'Command' : 'Context Menu'} Executed`)
                 .addFields(
                     { name: '👤 User', value: `${interaction.user}`, inline: true },
                     { name: '📅 Date', value: `<t:${nowInSeconds}:F>`, inline: true },

@@ -1,9 +1,8 @@
 import { dirname, importx } from '@discordx/importer';
-import {
-    ChannelType, codeBlock, EmbedBuilder, IntentsBitField, Partials,
-} from 'discord.js';
+import { IntentsBitField, Partials } from 'discord.js';
 import { Client } from 'discordx';
 import 'dotenv/config';
+import { handleError } from './utils/Util.js';
 
 /**
  * The Discord.js client instance.
@@ -21,37 +20,16 @@ const client = new Client({
  * @returns void
  */
 process.on('unhandledRejection', async (error) => {
-    if (!error || !(error instanceof Error) || !error.stack) return;
-    console.error(error.stack);
+    await handleError(client, error);
+});
 
-    if (process.env.ENABLE_LOGGING && process.env.ENABLE_LOGGING.toLowerCase() === 'true') {
-        if (!process.env.ERROR_LOGGING_CHANNEL) return;
-
-        const channel = client.channels.cache.get(process.env.ERROR_LOGGING_CHANNEL);
-        if (!channel || channel.type !== ChannelType.GuildText) return;
-
-        const typeOfError = error.stack.split(':')[0];
-        const fullError = error.stack.replace(/^[^:]+:/, '').trimStart();
-        const timeOfError = `<t:${Math.floor(new Date().getTime() / 1000)}>`;
-        const fullString = `From: \`${typeOfError}\`\nTime: ${timeOfError}\n\nError:\n${codeBlock('js', fullError)}`;
-
-        function truncateDescription(description: string) {
-            const maxLength = 2048;
-            if (description.length > maxLength) {
-                const numTruncatedChars = description.length - maxLength;
-                return `${description.slice(0, maxLength)}... ${numTruncatedChars} more`;
-            }
-            return description;
-        }
-
-        const embed = new EmbedBuilder().setTitle('Error').setDescription(truncateDescription(fullString));
-
-        try {
-            await channel.send({ embeds: [embed] });
-        } catch (sendError) {
-            console.error('An error occurred while sending the error embed:', sendError);
-        }
-    }
+/**
+ * Handles uncaught exception by logging the error and sending an embed to a designated logging channel, if enabled.
+ * @param error - The error that was not handled.
+ * @returns void
+ */
+process.on('uncaughtException', async (error) => {
+    await handleError(client, error);
 });
 
 /**

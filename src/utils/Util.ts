@@ -1,5 +1,5 @@
 import {
-    AttachmentBuilder, codeBlock, Message, User,
+    AttachmentBuilder, ChannelType, codeBlock, EmbedBuilder, Message, TextChannel, User,
 } from 'discord.js';
 import type { Client } from 'discordx';
 import type { TextContentBlock } from 'openai/resources/beta/threads';
@@ -427,3 +427,62 @@ export const reversedRainbow = (str: string): string => {
         .map((char, i) => char[colors[i % colors.length] as keyof typeof char])
         .join('');
 };
+
+/**
+ * Handles given error by logging it and optionally sending it to a Discord channel.
+ * @param client - The Discord client instance
+ * @param error - The unknown error
+ */
+export async function handleError(client: Client, error: unknown): Promise<void> {
+    if (!(error instanceof Error) || !error.stack) {
+        console.error('Invalid error object:', error);
+        return;
+    }
+
+    console.error(error);
+
+    if (process.env.ENABLE_LOGGING?.toLowerCase() !== 'true' || !process.env.LOGGING_CHANNEL) return;
+
+    /**
+     * Truncates the description if it exceeds the maximum length.
+     * @param description - The description to truncate
+     * @returns The truncated description
+     */
+    function truncateDescription(description: string): string {
+        const maxLength = 4096;
+        if (description.length <= maxLength) return description;
+
+        const numTruncatedChars = description.length - maxLength;
+        return `${description.slice(0, maxLength)}... ${numTruncatedChars} more`;
+    }
+
+    try {
+        const channel = client.channels.cache.get(process.env.LOGGING_CHANNEL) as TextChannel | undefined;
+
+        if (!channel || channel.type !== ChannelType.GuildText) {
+            console.error(`Invalid logging channel: ${process.env.LOGGING_CHANNEL}`);
+            return;
+        }
+
+        const typeOfError = error.name || 'Unknown Error';
+        const fullError = error.stack;
+        const timeOfError = `<t:${Math.floor(Date.now() / 1000)}>`;
+
+        const fullString = [
+            `From: \`${typeOfError}\``,
+            `Time: ${timeOfError}`,
+            '',
+            'Error:',
+            codeBlock('js', fullError),
+        ].join('\n');
+
+        const embed = new EmbedBuilder()
+            .setTitle('Error')
+            .setDescription(truncateDescription(fullString))
+            .setColor('#FF0000');
+
+        await channel.send({ embeds: [embed] });
+    } catch (sendError) {
+        console.error('Failed to send the error embed:', sendError);
+    }
+}

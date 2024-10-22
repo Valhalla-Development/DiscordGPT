@@ -47,15 +47,20 @@ export function messageDelete(message: Message, delay: number): void {
 /**
  * Fetches all registered global application command IDs.
  * @param client - The Discord client instance.
- * @returns A record of command names to their corresponding IDs.
+ * @returns A Promise that resolves to a record of command names to their corresponding IDs.
+ * @throws Error if unable to fetch commands or if the client's application is not available.
  */
 export async function getCommandIds(client: Client): Promise<Record<string, string>> {
+    if (!client.application) {
+        throw new Error('Client application is not available');
+    }
+
     try {
-        const commands = await client.application?.commands.fetch();
-        return commands ? Object.fromEntries(commands.map((c) => [c.name, c.id])) : {};
+        const commands = await client.application.commands.fetch();
+        return Object.fromEntries(commands.map((c) => [c.name, c.id]));
     } catch (error) {
         console.error('Error fetching global commands:', error);
-        return {};
+        throw error;
     }
 }
 

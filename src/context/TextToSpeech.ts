@@ -33,6 +33,15 @@ export class TextToSpeech {
             return;
         }
 
+        // Check if the message has enough text content to process
+        if (!interaction.targetMessage.content || interaction.targetMessage.content.length <= 10) {
+            await interaction.reply({
+                content: '⚠️ Message is too short - please select a message with at least 10 characters',
+                ephemeral: true,
+            });
+            return;
+        }
+
         await interaction.deferReply();
 
         // Run the TTS conversion for the selected message's content.

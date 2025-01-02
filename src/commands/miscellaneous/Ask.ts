@@ -38,12 +38,12 @@ export class Ask {
     ) {
         await interaction.deferReply();
 
-        // Check if threads are enabled AND we're in a guild (not DMs)
+        // Handle thread-based conversations if enabled and in a guild
         if (process.env.ENABLE_MESSAGE_THREADS === 'true' && interaction.guild && interaction.channel?.type === ChannelType.GuildText) {
             const threadName = `Conversation with ${interaction.user.username}`;
 
             try {
-                // Check for existing active thread
+                // Check for and handle existing active thread for the user
                 const activeThreads = await interaction.guild?.channels.fetchActiveThreads();
                 const existingThread = Array.from(activeThreads?.threads.values() ?? []).find(
                     (thread) => thread.name === threadName && !thread.archived,
@@ -57,27 +57,27 @@ export class Ask {
                     return;
                 }
 
+                // Clean up the deferred reply before creating thread
                 await interaction.deleteReply();
 
-                // Create thread on the interaction reply
+                // Create and configure new thread for conversation
                 const thread = await interaction.channel.threads.create({
                     name: threadName,
                     autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
                     reason: `Thread created for conversation with ${interaction.user.tag}`,
                 });
 
-                // Add the user to the thread
+                // Add user to thread and send initial messages
                 await thread.members.add(interaction.user.id);
-
-                // Send the user's query as a message
                 await thread.send({
                     content: `**${interaction.user.displayName}'s query:** ${query}\n\n`,
                 });
 
+                // Handle GPT response in thread
                 const initialMessage = await thread.send({ content: 'Generating response...' });
                 const response = await runGPT(query, interaction.user);
 
-                // Handle the response
+                // Handle various response types and errors
                 if (typeof response === 'boolean' && response) {
                     await interaction.editReply({
                         content: `You currently have an ongoing request. Please refrain from sending additional queries to avoid spamming ${client?.user}`,
@@ -92,7 +92,7 @@ export class Ask {
                     return;
                 }
 
-                // Update the initial message in the thread
+                // Update thread with GPT response
                 if (Array.isArray(response)) {
                     await initialMessage.edit({ content: response[0] });
                     await (thread as GuildTextBasedChannel | PublicThreadChannel).send({ content: response[1] });
@@ -102,7 +102,7 @@ export class Ask {
                     await initialMessage.edit({ content: 'An error occurred while processing your request.' });
                 }
 
-                // Update the original interaction with thread link
+                // Provide thread link to user
                 await interaction.editReply({ content: `I've created a thread for our conversation: ${thread.url}` });
             } catch (error) {
                 console.error('Error creating thread:', error);
@@ -112,6 +112,7 @@ export class Ask {
                 });
             }
         } else {
+            // Handle direct responses when threads are disabled or in DMs
             const response = await runGPT(query, interaction.user);
 
             if (typeof response === 'boolean' && response) {
@@ -120,12 +121,14 @@ export class Ask {
                 });
             }
 
+            // Eat sand
             if (response === query.replace(/<@!?(\d+)>/g, '')) {
                 return interaction.editReply({
                     content: `An error occurred, please report this to a member of our moderation team.\n${codeBlock('js', 'Error: Response was equal to query.')}`,
                 });
             }
 
+            // Send response directly in channel
             if (Array.isArray(response)) {
                 await interaction.editReply({ content: response[0] });
                 await interaction.followUp({ content: response[1] });

@@ -43,7 +43,7 @@ export class Ask {
             const threadName = `Conversation with ${interaction.user.username}`;
 
             try {
-                // Check for and handle existing active thread for the user
+            // Check for and handle existing active thread for the user
                 const activeThreads = await interaction.guild?.channels.fetchActiveThreads();
                 const existingThread = Array.from(activeThreads?.threads.values() ?? []).find(
                     (thread) => thread.name === threadName && !thread.archived,
@@ -101,9 +101,6 @@ export class Ask {
                 } else {
                     await initialMessage.edit({ content: 'An error occurred while processing your request.' });
                 }
-
-                // Provide thread link to user
-                await interaction.editReply({ content: `I've created a thread for our conversation: ${thread.url}` });
             } catch (error) {
                 console.error('Error creating thread:', error);
                 await handleError(client, error);

@@ -2,10 +2,16 @@ import {
     Client, Discord, Slash, SlashOption,
 } from 'discordx';
 import {
-    ApplicationCommandOptionType, codeBlock, CommandInteraction, Message,
+    ApplicationCommandOptionType,
+    ChannelType,
+    codeBlock,
+    CommandInteraction,
+    GuildTextBasedChannel,
+    PublicThreadChannel,
+    ThreadAutoArchiveDuration,
 } from 'discord.js';
 import { Category } from '@discordx/utilities';
-import { runGPT } from '../../utils/Util.js';
+import { handleError, runGPT } from '../../utils/Util.js';
 
 @Discord()
 @Category('Miscellaneous')
@@ -32,32 +38,100 @@ export class Ask {
     ) {
         await interaction.deferReply();
 
-        // Pass the options to run the 'runGPT' function
-        const response = await runGPT(query, interaction.user);
+        // Check if threads are enabled AND we're in a guild (not DMs)
+        if (process.env.ENABLE_MESSAGE_THREADS === 'true' && interaction.guild && interaction.channel?.type === ChannelType.GuildText) {
+            const threadName = `Conversation with ${interaction.user.username}`;
 
-        // If the response is boolean and true, then the user already has an ongoing query
-        if (typeof response === 'boolean' && response) {
-            return interaction.reply({ content: `You currently have an ongoing request. Please refrain from sending additional queries to avoid spamming ${client?.user}` });
-        }
+            try {
+                // Check for existing active thread
+                const activeThreads = await interaction.guild?.channels.fetchActiveThreads();
+                const existingThread = Array.from(activeThreads?.threads.values() ?? []).find(
+                    (thread) => thread.name === threadName && !thread.archived,
+                );
 
-        if (response === query.replaceAll(/<@!?(\d+)>/g, '')) {
-            return interaction.reply({
-                content: `An error occurred, please report this to a member of our moderation team.\n
-                ${codeBlock('js', 'Error: Response was equal to query.')}`,
-            });
-        }
+                if (existingThread) {
+                    const threadUrl = `https://discord.com/channels/${interaction.guild!.id}/${existingThread.id}/${existingThread.id}`;
+                    await interaction.editReply({
+                        content: `You already have an active thread. Please submit your request here: ${threadUrl}.`,
+                    });
+                    return;
+                }
 
-        // If response is an array of responses
-        if (Array.isArray(response)) {
-            await response.reduce<Promise<Message>>(async (prevMsgPromise, content, index) => {
-                const msg = await prevMsgPromise;
-                return index === 0
-                    ? interaction.editReply({ content })
-                    : msg.reply({ content });
-            }, Promise.resolve(interaction.fetchReply()));
-        } else if (typeof response === 'string') {
-            // If the response is a string, send a single message
-            await interaction.editReply({ content: response });
+                await interaction.deleteReply();
+
+                // Create thread on the interaction reply
+                const thread = await interaction.channel.threads.create({
+                    name: threadName,
+                    autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
+                    reason: `Thread created for conversation with ${interaction.user.tag}`,
+                });
+
+                // Add the user to the thread
+                await thread.members.add(interaction.user.id);
+
+                // Send the user's query as a message
+                await thread.send({
+                    content: `**${interaction.user.displayName}'s query:** ${query}\n\n`,
+                });
+
+                const initialMessage = await thread.send({ content: 'Generating response...' });
+                const response = await runGPT(query, interaction.user);
+
+                // Handle the response
+                if (typeof response === 'boolean' && response) {
+                    await interaction.editReply({
+                        content: `You currently have an ongoing request. Please refrain from sending additional queries to avoid spamming ${client?.user}`,
+                    });
+                    return;
+                }
+
+                if (response === query.replace(/<@!?(\d+)>/g, '')) {
+                    await interaction.editReply({
+                        content: `An error occurred, please report this to a member of our moderation team.\n${codeBlock('js', 'Error: Response was equal to query.')}`,
+                    });
+                    return;
+                }
+
+                // Update the initial message in the thread
+                if (Array.isArray(response)) {
+                    await initialMessage.edit({ content: response[0] });
+                    await (thread as GuildTextBasedChannel | PublicThreadChannel).send({ content: response[1] });
+                } else if (typeof response === 'string') {
+                    await initialMessage.edit({ content: response });
+                } else {
+                    await initialMessage.edit({ content: 'An error occurred while processing your request.' });
+                }
+
+                // Update the original interaction with thread link
+                await interaction.editReply({ content: `I've created a thread for our conversation: ${thread.url}` });
+            } catch (error) {
+                console.error('Error creating thread:', error);
+                await handleError(client, error);
+                await interaction.channel.send({
+                    content: 'Sorry, I couldn\'t create a thread. Please try again later or contact support.',
+                });
+            }
+        } else {
+            const response = await runGPT(query, interaction.user);
+
+            if (typeof response === 'boolean' && response) {
+                return interaction.editReply({
+                    content: `You currently have an ongoing request. Please refrain from sending additional queries to avoid spamming ${client?.user}`,
+                });
+            }
+
+            if (response === query.replace(/<@!?(\d+)>/g, '')) {
+                return interaction.editReply({
+                    content: `An error occurred, please report this to a member of our moderation team.\n${codeBlock('js', 'Error: Response was equal to query.')}`,
+                });
+            }
+
+            if (Array.isArray(response)) {
+                await interaction.editReply({ content: response[0] });
+                await interaction.followUp({ content: response[1] });
+            } else if (typeof response === 'string') {
+                await interaction.editReply({ content: response });
+            }
         }
     }
 }

@@ -32,6 +32,11 @@ export class MessageCreate {
         this.supportServerInvite = process.env.SUPPORT_SERVER_INVITE;
     }
 
+    /**
+     * Main message handler for all incoming messages
+     * @param message - The Discord message object
+     * @param client - The Discord client instance
+     */
     @On({ event: 'messageCreate' })
     async onMessage([message]: ArgsOf<'messageCreate'>, client: Client) {
         if (message.author.bot) return;
@@ -60,11 +65,20 @@ export class MessageCreate {
         }
     }
 
+    /**
+     * Checks if the bot is allowed to operate in the given server
+     * @param guildId - The Discord server ID
+     * @returns true if the bot can operate in this server
+     */
     private isServerAllowed(guildId: string): boolean {
         if (this.allowedServers.length === 0) return true;
         return this.allowedServers.includes(guildId);
     }
 
+    /**
+     * Handles direct messages sent to the bot
+     * Either processes the message or redirects to support server
+     */
     private async handleDirectMessage(message: Message, client: Client) {
         if (process.env.ENABLE_DIRECT_MESSAGES === 'true') {
             await this.handleGPTResponse(message.content, message.author, message, client);
@@ -86,6 +100,13 @@ export class MessageCreate {
         }
     }
 
+    /**
+     * Determines if the bot should respond to a message based on various criteria:
+     * - Message is a question
+     * - Message is not in excluded channels
+     * - Message has meaningful content
+     * - Random chance (4%)
+     */
     private shouldRespond(message: Message, client: Client): boolean {
         if (this.excludedChannels.has(message.channel.id)) return false;
 
@@ -99,6 +120,10 @@ export class MessageCreate {
         return chance <= 0.04 && isQuestion && hasContent && notAReply;
     }
 
+    /**
+     * Manages thread creation and responses for thread-based conversations
+     * @returns true if the message was handled within thread context
+     */
     private async manageThreadsIfNeeded(message: Message, client: Client): Promise<boolean> {
         if (!message.channel.isThread() && message.mentions.has(client.user!.id)) {
             const isReplyToAnotherUser = message.reference
@@ -141,6 +166,10 @@ export class MessageCreate {
         return false;
     }
 
+    /**
+     * Creates and manages a new thread for user conversation
+     * Ensures only one active thread per user and validates initial message
+     */
     private async handleThreadManagement(message: Message, client: Client): Promise<void> {
         const { author } = message;
         const threadName = `Conversation with ${author.username}`;
@@ -181,6 +210,14 @@ export class MessageCreate {
         }
     }
 
+    /**
+     * Processes a message through GPT and sends the response
+     * @param content - The message content to process
+     * @param user - The user who sent the message
+     * @param msg - The original message object
+     * @param client - The Discord client instance
+     * @param editInitial - Whether to edit the initial message instead of replying
+     */
     private async handleGPTResponse(
         content: string,
         user: User,
@@ -227,6 +264,10 @@ export class MessageCreate {
         }
     }
 
+    /**
+     * Handles messages that are replies to other messages
+     * Processes both replies to bot messages and mentions in replies
+     */
     private async handleRepliedMessage(message: Message, client: Client): Promise<void> {
         try {
             const repliedMessage = await message.channel.messages.fetch(`${message.reference!.messageId}`);

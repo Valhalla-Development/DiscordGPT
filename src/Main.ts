@@ -47,7 +47,7 @@ async function run() {
         'BOT_TOKEN', 'OPENAI_API_KEY', 'OPENAI_ASSISTANT_ID', 'MAX_QUERIES_LIMIT',
         'ADMIN_USER_IDS', 'STAFF_ROLE_IDS',
     ];
-    const booleans = ['ENABLE_DIRECT_MESSAGES', 'ENABLE_LOGGING', 'ENABLE_EMBED_LINKS', 'ENABLE_TTS'];
+    const booleans = ['ENABLE_DIRECT_MESSAGES', 'ENABLE_LOGGING', 'ENABLE_EMBED_LINKS', 'ENABLE_TTS', 'ENABLE_MESSAGE_THREADS'];
 
     required.forEach((v) => { if (!process.env[v]) throw new Error(missingVar(v)); });
     booleans.forEach((v) => {

@@ -38,6 +38,34 @@ export class Ask {
     ) {
         await interaction.deferReply();
 
+        // Check if user is trying to use command in someone else's thread
+        if (interaction.channel?.isThread()) {
+            const thread = interaction.channel as PublicThreadChannel;
+            const threadName = thread.name;
+            const threadOwnerName = threadName.match(/Conversation with (.+)/)?.[1];
+
+            if (threadOwnerName && interaction.user.username !== threadOwnerName) {
+                let responseContent = 'Please create your own thread to interact with me.';
+
+                // Add channel reference if command usage channel is configured
+                if (process.env.COMMAND_USAGE_CHANNEL) {
+                    try {
+                        const channel = await client.channels.fetch(process.env.COMMAND_USAGE_CHANNEL);
+                        if (channel?.isTextBased()) {
+                            responseContent = `Please create your own thread to interact with me in ${channel}.`;
+                        }
+                    } catch {
+                        // Do nothing if channel fetch fails
+                    }
+                }
+
+                await interaction.editReply({
+                    content: responseContent,
+                });
+                return;
+            }
+        }
+
         // Handle thread-based conversations if enabled and in a guild
         if (process.env.ENABLE_MESSAGE_THREADS === 'true' && interaction.guild && interaction.channel?.type === ChannelType.GuildText) {
             const threadName = `Conversation with ${interaction.user.username}`;

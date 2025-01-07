@@ -558,12 +558,43 @@ export async function handleThreadCreation(context: ThreadContext): Promise<bool
 
         if (existingThread) {
             const threadUrl = `https://discord.com/channels/${guild!.id}/${existingThread.id}/${existingThread.id}`;
-            const response = `You already have an active thread. Please submit your request here: ${threadUrl}.`;
 
+            // Immediately notify user that we're processing their message
+            const processingMessage = `Processing your request in your existing thread: ${threadUrl}`;
             if (source instanceof CommandInteraction) {
-                await source.editReply({ content: response });
+                await source.editReply({ content: processingMessage });
             } else {
-                await source.reply({ content: response });
+                await source.reply({ content: processingMessage });
+            }
+
+            // Forward the query to the existing thread
+            if (query) {
+                await existingThread.send({
+                    content: `**${user.displayName}'s query:** ${query}\n\n`,
+                });
+                const initialMessage = await existingThread.send({ content: 'Generating response...' });
+
+                await existingThread.sendTyping();
+
+                const response = await runGPT(query, user);
+
+                // Handle the response
+                if (typeof response === 'boolean') {
+                    if (response) {
+                        await initialMessage.edit({
+                            content: `You currently have an ongoing request. Please refrain from sending additional queries to avoid spamming ${client.user}`,
+                        });
+                    }
+                } else if (response === query.replace(/<@!?(\d+)>/g, '')) {
+                    await initialMessage.edit({
+                        content: `An error occurred, please report this to a member of our moderation team.\n${codeBlock('js', 'Error: Response was equal to query.')}`,
+                    });
+                } else if (Array.isArray(response)) {
+                    await initialMessage.edit({ content: response[0] });
+                    await existingThread.send({ content: response[1] });
+                } else if (typeof response === 'string') {
+                    await initialMessage.edit({ content: response });
+                }
             }
             return true;
         }

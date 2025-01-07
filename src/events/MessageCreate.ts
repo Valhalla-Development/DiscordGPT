@@ -1,16 +1,9 @@
 import type { ArgsOf, Client } from 'discordx';
 import { Discord, On } from 'discordx';
 import {
-    ChannelType,
-    codeBlock,
-    EmbedBuilder,
-    GuildTextBasedChannel,
-    Message,
-    PublicThreadChannel,
-    ThreadAutoArchiveDuration,
-    User,
+    ChannelType, EmbedBuilder, Message, User,
 } from 'discord.js';
-import { handleThreadCreation, runGPT } from '../utils/Util.js';
+import { handleGPTResponse, handleThreadCreation, runGPT } from '../utils/Util.js';
 
 @Discord()
 export class MessageCreate {
@@ -149,52 +142,19 @@ export class MessageCreate {
      * @param user - The user who sent the message
      * @param msg - The original message object
      * @param client - The Discord client instance
-     * @param editInitial - Whether to edit the initial message instead of replying
      */
     private async handleGPTResponse(
         content: string,
         user: User,
         msg: Message,
         client: Client,
-        editInitial: boolean = false,
     ): Promise<void> {
-        if (msg.channel.type === ChannelType.GuildText || msg.channel.type === ChannelType.PublicThread) await msg.channel.sendTyping();
-
-        try {
-            const response = await runGPT(content, user);
-
-            if (typeof response === 'boolean') {
-                if (response) {
-                    await msg.reply({
-                        content: `You currently have an ongoing request. Please refrain from sending additional queries to avoid spamming ${client.user}`,
-                    });
-                }
-                return;
-            }
-
-            if (response === content.replace(/<@!?(\d+)>/g, '')) {
-                await msg.reply({
-                    content: `An error occurred, please report this to a member of our moderation team.\n${codeBlock('js', 'Error: Response was equal to query.')}`,
-                });
-                return;
-            }
-
-            if (Array.isArray(response)) {
-                if (editInitial) {
-                    await msg.edit({ content: response[0] });
-                    await (msg.channel as GuildTextBasedChannel | PublicThreadChannel).send({ content: response[1] });
-                }
-            } else if (editInitial) {
-                await msg.edit({ content: response });
-            } else {
-                await msg.reply({ content: response });
-            }
-        } catch (error) {
-            console.error('Error handling GPT response:', error);
-            await msg.reply({
-                content: 'Sorry, something went wrong while processing your request.',
-            });
+        if (msg.channel.type === ChannelType.GuildText || msg.channel.type === ChannelType.PublicThread) {
+            await msg.channel.sendTyping();
         }
+
+        const response = await runGPT(content, user);
+        await handleGPTResponse(response, msg, client);
     }
 
     /**

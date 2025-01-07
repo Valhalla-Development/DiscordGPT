@@ -1,15 +1,9 @@
 import {
     Client, Discord, Slash, SlashOption,
 } from 'discordx';
-import {
-    ApplicationCommandOptionType,
-    ChannelType,
-    codeBlock,
-    CommandInteraction,
-    ThreadAutoArchiveDuration,
-} from 'discord.js';
+import { ApplicationCommandOptionType, ChannelType, CommandInteraction } from 'discord.js';
 import { Category } from '@discordx/utilities';
-import { handleThreadCreation, runGPT } from '../../utils/Util.js';
+import { handleGPTResponse, handleThreadCreation, runGPT } from '../../utils/Util.js';
 
 @Discord()
 @Category('Miscellaneous')
@@ -45,29 +39,8 @@ export class Ask {
                 commandUsageChannel: process.env.COMMAND_USAGE_CHANNEL,
             });
         } else {
-            // Handle direct responses when threads are disabled or in DMs
             const response = await runGPT(query, interaction.user);
-
-            if (typeof response === 'boolean' && response) {
-                return interaction.editReply({
-                    content: `You currently have an ongoing request. Please refrain from sending additional queries to avoid spamming ${client?.user}`,
-                });
-            }
-
-            // Eat sand
-            if (response === query.replace(/<@!?(\d+)>/g, '')) {
-                return interaction.editReply({
-                    content: `An error occurred, please report this to a member of our moderation team.\n${codeBlock('js', 'Error: Response was equal to query.')}`,
-                });
-            }
-
-            // Send response directly in channel
-            if (Array.isArray(response)) {
-                await interaction.editReply({ content: response[0] });
-                await interaction.followUp({ content: response[1] });
-            } else if (typeof response === 'string') {
-                await interaction.editReply({ content: response });
-            }
+            await handleGPTResponse(response, interaction, client);
         }
     }
 }

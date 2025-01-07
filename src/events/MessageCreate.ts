@@ -149,7 +149,7 @@ export class MessageCreate {
         msg: Message,
         client: Client,
     ): Promise<void> {
-        if (msg.channel.type === ChannelType.GuildText || msg.channel.type === ChannelType.PublicThread) {
+        if (msg.channel.type === ChannelType.GuildText || msg.channel.type === ChannelType.PublicThread || msg.channel.type === ChannelType.DM) {
             await msg.channel.sendTyping();
         }
 

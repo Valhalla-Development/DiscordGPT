@@ -4,10 +4,13 @@ import {
     codeBlock,
     CommandInteraction,
     EmbedBuilder,
+    Guild,
+    GuildTextBasedChannel,
     Message,
     PublicThreadChannel,
     TextChannel,
     ThreadAutoArchiveDuration,
+    ThreadChannel,
     User,
 } from 'discord.js';
 import type { Client } from 'discordx';
@@ -557,7 +560,7 @@ export async function handleThreadCreation(context: ThreadContext): Promise<bool
         );
 
         if (existingThread) {
-            const threadUrl = `https://discord.com/channels/${guild!.id}/${existingThread.id}/${existingThread.id}`;
+            const threadUrl = getThreadUrl(guild!, existingThread);
 
             // Immediately notify user that we're processing their message
             const processingMessage = `Processing your request in your existing thread: ${threadUrl}`;
@@ -650,8 +653,7 @@ export async function handleThreadCreation(context: ThreadContext): Promise<bool
                 content: `**${user.displayName}'s query:** ${query}\n\n`,
             });
             const initialMessage = await thread.send({ content: 'Generating response...' });
-            // const response = await runGPT(query, user);
-            const response = 'hi';
+            const response = await runGPT(query, user);
 
             // Handle the response
             if (typeof response === 'boolean') {
@@ -692,4 +694,89 @@ export async function handleThreadCreation(context: ThreadContext): Promise<bool
         }
         return true;
     }
+}
+
+/**
+ * Handles GPT response processing and message sending
+ * @param response - The response from GPT
+ * @param source - The original message or interaction
+ * @param client - The Discord client
+ * @param editMessage - Optional message to edit instead of replying
+ */
+export async function handleGPTResponse(
+    response: string | string[] | boolean,
+    source: Message | CommandInteraction,
+    client: Client,
+    editMessage?: Message,
+): Promise<void> {
+    try {
+        const content = source instanceof Message
+            ? source.content
+            : source.options.get('query')?.value as string || '';
+
+        // Handle boolean response (usually rate limiting)
+        if (typeof response === 'boolean') {
+            if (response) {
+                const message = `You currently have an ongoing request. Please refrain from sending additional queries to avoid spamming ${client.user}`;
+                await replyToSource(source, { content: message }, editMessage);
+            }
+            return;
+        }
+
+        // Handle error where response equals input
+        if (response === content.replace(/<@!?(\d+)>/g, '')) {
+            const message = `An error occurred, please report this to a member of our moderation team.\n${codeBlock('js', 'Error: Response was equal to query.')}`;
+            await replyToSource(source, { content: message }, editMessage);
+            return;
+        }
+
+        // Handle array or string response
+        if (Array.isArray(response)) {
+            if (editMessage) {
+                await editMessage.edit({ content: response[0] });
+                await (editMessage.channel as GuildTextBasedChannel | PublicThreadChannel).send({ content: response[1] });
+            } else if (source instanceof CommandInteraction) {
+                await source.editReply({ content: response[0] });
+                await source.followUp({ content: response[1] });
+            } else {
+                const textChannel = source.channel?.isTextBased() && 'send' in source.channel
+                    ? source.channel
+                    : null;
+
+                if (!textChannel) {
+                    throw new Error('Cannot send message: Channel is not text-based or does not support sending messages');
+                }
+
+                await source.reply({ content: response[0] });
+                await textChannel.send({ content: response[1] });
+            }
+        } else {
+            await replyToSource(source, { content: response }, editMessage);
+        }
+    } catch (error) {
+        console.error('Error handling GPT response:', error);
+        const errorMessage = 'Sorry, something went wrong while processing your request.';
+        await replyToSource(source, { content: errorMessage }, editMessage);
+    }
+}
+
+/**
+ * Helper function to handle replies for both Message and CommandInteraction
+ */
+async function replyToSource(
+    source: Message | CommandInteraction,
+    options: { content: string },
+    editMessage?: Message,
+): Promise<void> {
+    if (editMessage) {
+        await editMessage.edit(options);
+    } else if (source instanceof CommandInteraction) {
+        await source.editReply(options);
+    } else {
+        await source.reply(options);
+    }
+}
+
+function getThreadUrl(guild: Guild, thread: ThreadChannel): string {
+    return `https://discord.com/channels/${guild.id}/${thread.id}/${thread.id}`;
 }

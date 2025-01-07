@@ -10,7 +10,7 @@ import {
     ThreadAutoArchiveDuration,
     User,
 } from 'discord.js';
-import { runGPT } from '../utils/Util.js';
+import { handleThreadCreation, runGPT } from '../utils/Util.js';
 
 @Discord()
 export class MessageCreate {
@@ -131,83 +131,16 @@ export class MessageCreate {
                 : false;
 
             if (!isReplyToAnotherUser) {
-                await this.handleThreadManagement(message, client);
-                return true;
-            }
-        } else if (message.channel.isThread()) {
-            const thread = message.channel as PublicThreadChannel;
-            const threadName = thread.name;
-            const threadOwnerName = threadName.match(/Conversation with (.+)/)?.[1];
-
-            const isReplyToBot = message.reference
-                ? (await message.channel.messages.fetch(`${message.reference.messageId}`)).author.id === client.user!.id
-                : false;
-
-            if (threadOwnerName && message.author.username !== threadOwnerName && (isReplyToBot || message.mentions.has(client.user!.id))) {
-                let responseContent = 'Please create your own thread to interact with me.';
-
-                if (this.commandUsageChannel) {
-                    try {
-                        const channel = await client.channels.fetch(this.commandUsageChannel);
-                        if (channel?.isTextBased()) {
-                            responseContent = `Please create your own thread to interact with me in ${channel}.`;
-                        }
-                    } catch {
-                        // Do nothing
-                    }
-                }
-
-                await message.reply({
-                    content: responseContent,
+                return handleThreadCreation({
+                    source: message,
+                    client,
+                    user: message.author,
+                    query: message.content,
+                    commandUsageChannel: this.commandUsageChannel,
                 });
-                return true;
             }
         }
         return false;
-    }
-
-    /**
-     * Creates and manages a new thread for user conversation
-     * Ensures only one active thread per user and validates initial message
-     */
-    private async handleThreadManagement(message: Message, client: Client): Promise<void> {
-        const { author } = message;
-        const threadName = `Conversation with ${author.username}`;
-
-        try {
-            const activeThreads = await message.guild!.channels.fetchActiveThreads();
-            const existingThread = Array.from(activeThreads.threads.values()).find(
-                (thread) => thread.name === threadName && !thread.archived,
-            );
-
-            if (existingThread) {
-                const threadUrl = `https://discord.com/channels/${message.guild!.id}/${existingThread.id}/${existingThread.id}`;
-                await message.reply({
-                    content: `You already have an active thread. Please submit your request here: ${threadUrl}.`,
-                });
-                return;
-            }
-
-            const contentStripped = message.content.replace(/<@!?(\d+)>/g, '').trim();
-            if (contentStripped.length < 4) {
-                await message.reply({ content: 'Please enter a valid query, with a minimum length of 4 characters.' });
-                return;
-            }
-
-            const thread = await message.startThread({
-                name: threadName,
-                autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
-                reason: `Thread created for conversation with ${author.tag}`,
-            });
-
-            const initialMessage = await thread.send({ content: 'Generating response...' });
-            await this.handleGPTResponse(message.content, author, initialMessage, client, true);
-        } catch (error) {
-            console.error('Error creating thread:', error);
-            await message.reply({
-                content: 'Sorry, I couldn\'t create a thread. Please try again later or contact support.',
-            });
-        }
     }
 
     /**

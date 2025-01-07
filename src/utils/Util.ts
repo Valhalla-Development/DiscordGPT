@@ -1,5 +1,14 @@
 import {
-    AttachmentBuilder, ChannelType, codeBlock, EmbedBuilder, Message, TextChannel, User,
+    AttachmentBuilder,
+    ChannelType,
+    codeBlock,
+    CommandInteraction,
+    EmbedBuilder,
+    Message,
+    PublicThreadChannel,
+    TextChannel,
+    ThreadAutoArchiveDuration,
+    User,
 } from 'discord.js';
 import type { Client } from 'discordx';
 import type { TextContentBlock } from 'openai/resources/beta/threads';
@@ -446,7 +455,7 @@ export async function handleError(client: Client, error: unknown): Promise<void>
 
     console.error(error);
 
-    if (process.env.ENABLE_LOGGING?.toLowerCase() !== 'true' || !process.env.LOGGING_CHANNEL) return;
+    if (process.env.ENABLE_LOGGING?.toLowerCase() !== 'true' || !process.env.ERROR_LOGGING_CHANNEL) return;
 
     /**
      * Truncates the description if it exceeds the maximum length.
@@ -462,10 +471,10 @@ export async function handleError(client: Client, error: unknown): Promise<void>
     }
 
     try {
-        const channel = client.channels.cache.get(process.env.LOGGING_CHANNEL) as TextChannel | undefined;
+        const channel = client.channels.cache.get(process.env.ERROR_LOGGING_CHANNEL) as TextChannel | undefined;
 
         if (!channel || channel.type !== ChannelType.GuildText) {
-            console.error(`Invalid logging channel: ${process.env.LOGGING_CHANNEL}`);
+            console.error(`Invalid logging channel: ${process.env.ERROR_LOGGING_CHANNEL}`);
             return;
         }
 
@@ -489,5 +498,167 @@ export async function handleError(client: Client, error: unknown): Promise<void>
         await channel.send({ embeds: [embed] });
     } catch (sendError) {
         console.error('Failed to send the error embed:', sendError);
+    }
+}
+
+type ThreadContext = {
+    source: Message | CommandInteraction;
+    client: Client;
+    user: User;
+    query?: string;
+    commandUsageChannel?: string;
+};
+
+/**
+ * Unified thread management for both message events and slash commands
+ * @param context - The context object containing necessary information
+ * @returns Promise<boolean> - true if the thread was handled, false otherwise
+ */
+export async function handleThreadCreation(context: ThreadContext): Promise<boolean> {
+    const {
+        source, client, user, query, commandUsageChannel,
+    } = context;
+    const threadName = `Conversation with ${user.username}`;
+    const { guild } = source;
+
+    // Check if in existing thread and validate ownership
+    if (source.channel?.isThread()) {
+        const thread = source.channel as PublicThreadChannel;
+        const threadOwnerName = thread.name.match(/Conversation with (.+)/)?.[1];
+
+        if (threadOwnerName && user.username !== threadOwnerName) {
+            let responseContent = 'Please create your own thread to interact with me.';
+
+            if (commandUsageChannel) {
+                try {
+                    const channel = await client.channels.fetch(commandUsageChannel);
+                    if (channel?.isTextBased()) {
+                        responseContent = `Please create your own thread to interact with me in ${channel}.`;
+                    }
+                } catch {
+                    // Do nothing if channel fetch fails
+                }
+            }
+
+            if (source instanceof CommandInteraction) {
+                await source.editReply({ content: responseContent });
+            } else {
+                await source.reply({ content: responseContent });
+            }
+            return true;
+        }
+    }
+
+    // Check for existing active thread
+    try {
+        const activeThreads = await guild?.channels.fetchActiveThreads();
+        const existingThread = Array.from(activeThreads?.threads.values() ?? []).find(
+            (thread) => thread.name === threadName && !thread.archived,
+        );
+
+        if (existingThread) {
+            const threadUrl = `https://discord.com/channels/${guild!.id}/${existingThread.id}/${existingThread.id}`;
+            const response = `You already have an active thread. Please submit your request here: ${threadUrl}.`;
+
+            if (source instanceof CommandInteraction) {
+                await source.editReply({ content: response });
+            } else {
+                await source.reply({ content: response });
+            }
+            return true;
+        }
+
+        // Validate query length if provided
+        const contentStripped = query?.replace(/<@!?(\d+)>/g, '').trim() ?? '';
+        if (contentStripped.length < 4) {
+            const response = 'Please enter a valid query, with a minimum length of 4 characters.';
+            if (source instanceof CommandInteraction) {
+                await source.editReply({ content: response });
+            } else {
+                await source.reply({ content: response });
+            }
+            return true;
+        }
+
+        // Create new thread
+        if (!source.channel?.isTextBased() || source.channel.isDMBased()) {
+            throw new Error('Cannot create threads in DM channels');
+        }
+
+        // Clean up original interaction if it's a slash command
+        if (source instanceof CommandInteraction) {
+            await source.deleteReply();
+        }
+
+        const thread = source instanceof CommandInteraction
+            ? await (source.channel.type === ChannelType.GuildText
+                ? source.channel.threads.create({
+                    name: threadName,
+                    autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
+                    reason: `Thread created for conversation with ${user.tag}`,
+                })
+                : null)
+            : await (source.channel.type === ChannelType.GuildText
+                ? (source as Message).startThread({
+                    name: threadName,
+                    autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
+                    reason: `Thread created for conversation with ${user.tag}`,
+                })
+                : null);
+
+        if (!thread) {
+            throw new Error('Failed to create thread: Invalid channel type');
+        }
+
+        // Add user to thread
+        await thread.members.add(user.id);
+
+        // Handle initial messages
+        if (query) {
+            await thread.send({
+                content: `**${user.displayName}'s query:** ${query}\n\n`,
+            });
+            const initialMessage = await thread.send({ content: 'Generating response...' });
+            // const response = await runGPT(query, user);
+            const response = 'hi';
+
+            // Handle the response
+            if (typeof response === 'boolean') {
+                if (response) {
+                    await initialMessage.edit({
+                        content: `You currently have an ongoing request. Please refrain from sending additional queries to avoid spamming ${client.user}`,
+                    });
+                }
+                return true;
+            }
+
+            if (response === query.replace(/<@!?(\d+)>/g, '')) {
+                await initialMessage.edit({
+                    content: `An error occurred, please report this to a member of our moderation team.\n${codeBlock('js', 'Error: Response was equal to query.')}`,
+                });
+                return true;
+            }
+
+            // Send response in thread
+            if (Array.isArray(response)) {
+                await initialMessage.edit({ content: response[0] });
+                await thread.send({ content: response[1] });
+            } else if (typeof response === 'string') {
+                await initialMessage.edit({ content: response });
+            }
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Error in thread creation:', error);
+        await handleError(client, error);
+
+        const errorMessage = 'Sorry, I couldn\'t create a thread. Please try again later or contact support.';
+        if (source instanceof CommandInteraction) {
+            await source.editReply({ content: errorMessage });
+        } else {
+            await source.reply({ content: errorMessage });
+        }
+        return true;
     }
 }

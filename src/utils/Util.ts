@@ -625,14 +625,14 @@ export async function handleThreadCreation(context: ThreadContext): Promise<bool
             ? await (source.channel.type === ChannelType.GuildText
                 ? source.channel.threads.create({
                     name: threadName,
-                    autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
+                    autoArchiveDuration: ThreadAutoArchiveDuration.OneHour,
                     reason: `Thread created for conversation with ${user.tag}`,
                 })
                 : null)
             : await (source.channel.type === ChannelType.GuildText
                 ? (source as Message).startThread({
                     name: threadName,
-                    autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek,
+                    autoArchiveDuration: ThreadAutoArchiveDuration.OneHour,
                     reason: `Thread created for conversation with ${user.tag}`,
                 })
                 : null);

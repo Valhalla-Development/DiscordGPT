@@ -38,6 +38,16 @@ process.on('uncaughtException', async (error) => {
 });
 
 /**
+ * Event handler for client errors
+ * @param error - The error that occurred
+ * @returns Promise that resolves when error is handled
+ */
+client.on('error', async (error: unknown) => {
+    console.error('Client error:', error);
+    await handleError(client, error);
+});
+
+/**
  * Runs the bot by loading the required components and logging in the client.
  * @async
  * @returns A Promise that resolves with void when the bot is started.

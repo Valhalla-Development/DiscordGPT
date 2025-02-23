@@ -1,37 +1,42 @@
-import {
-    ButtonComponent, Client, Discord, Slash, SlashOption,
-} from 'discordx';
+import { Category } from '@discordx/utilities';
 import {
     ActionRowBuilder,
     ApplicationCommandOptionType,
     ButtonBuilder,
-    ButtonInteraction,
+    type ButtonInteraction,
     ButtonStyle,
-    CommandInteraction,
+    type CommandInteraction,
     EmbedBuilder,
+    type EmbedField,
     GuildMemberRoleManager,
-    InteractionResponse,
-    User,
+    type InteractionResponse,
+    type User,
 } from 'discord.js';
-import { Category } from '@discordx/utilities';
-import { getGptQueryData, setGptQueryData } from '../../utils/Util.js';
+import { ButtonComponent, type Client, Discord, Slash, SlashOption } from 'discordx';
+import { type UserData, getGptQueryData, setGptQueryData } from '../../utils/Util.js';
 
 @Discord()
 @Category('Miscellaneous')
 export class Queries {
     private user: User | undefined;
 
-    private msg: InteractionResponse | void | undefined;
+    private msg: InteractionResponse | undefined | undefined;
 
     private isAdmin: boolean | undefined;
 
     private generateEmbed(
         user: User,
-        getData: { totalQueries: number, queriesRemaining: number; expiration: number;
-            whitelisted: boolean; blacklisted: boolean, threadId: string; },
-        client: Client,
-    ): { embed: EmbedBuilder, row: ActionRowBuilder<ButtonBuilder> } {
-        const fields = [];
+        getData: {
+            totalQueries: number;
+            queriesRemaining: number;
+            expiration: number;
+            whitelisted: boolean;
+            blacklisted: boolean;
+            threadId: string;
+        },
+        client: Client
+    ): { embed: EmbedBuilder; row: ActionRowBuilder<ButtonBuilder> } {
+        const fields: EmbedField[] = [];
         const expiration = new Date(getData.expiration);
         const epochTime = Math.floor(Number(expiration) / 1000);
 
@@ -43,7 +48,10 @@ export class Queries {
 
         if (!getData.whitelisted && !getData.blacklisted) {
             const remaining = `${Number(process.env.MAX_QUERIES_LIMIT) - Number(getData.queriesRemaining)}/${process.env.MAX_QUERIES_LIMIT}`;
-            const resetValue = getData.queriesRemaining === Number(process.env.MAX_QUERIES_LIMIT) ? 'N/A' : `<t:${epochTime}>`;
+            const resetValue =
+                getData.queriesRemaining === Number(process.env.MAX_QUERIES_LIMIT)
+                    ? 'N/A'
+                    : `<t:${epochTime}>`;
             fields.push(
                 {
                     name: 'Queries Used',
@@ -54,7 +62,7 @@ export class Queries {
                     name: 'Query Reset',
                     value: resetValue,
                     inline: true,
-                },
+                }
             );
         } else {
             fields.push({
@@ -73,21 +81,25 @@ export class Queries {
             new ButtonBuilder()
                 .setCustomId('blacklistButton')
                 .setLabel('Toggle Blacklist')
-                .setStyle(ButtonStyle.Secondary),
+                .setStyle(ButtonStyle.Secondary)
         );
 
         // Only show whitelist & delete thread button if the user is an admin.
         if (this.isAdmin) {
-            row.addComponents(new ButtonBuilder()
-                .setCustomId('whitelistButton')
-                .setLabel('Toggle Whitelist')
-                .setStyle(ButtonStyle.Secondary));
+            row.addComponents(
+                new ButtonBuilder()
+                    .setCustomId('whitelistButton')
+                    .setLabel('Toggle Whitelist')
+                    .setStyle(ButtonStyle.Secondary)
+            );
 
-            row.addComponents(new ButtonBuilder()
-                .setCustomId('deleteThreadButton')
-                .setLabel('Delete Thread')
-                .setStyle(ButtonStyle.Secondary)
-                .setDisabled(!getData.threadId || getData.threadId === ''));
+            row.addComponents(
+                new ButtonBuilder()
+                    .setCustomId('deleteThreadButton')
+                    .setLabel('Delete Thread')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setDisabled(!getData.threadId || getData.threadId === '')
+            );
         }
 
         const embed = new EmbedBuilder()
@@ -100,7 +112,9 @@ export class Queries {
         return { embed, row };
     }
 
-    @Slash({ description: 'Displays query information for the specified user or the message author.' })
+    @Slash({
+        description: 'Displays query information for the specified user or the message author.',
+    })
     async queries(
         @SlashOption({
             description: 'User',
@@ -108,9 +122,9 @@ export class Queries {
             required: false,
             type: ApplicationCommandOptionType.User,
         })
-            targetUser: User | undefined,
-            interaction: CommandInteraction,
-            client: Client,
+        targetUser: User | undefined,
+        interaction: CommandInteraction,
+        client: Client
     ) {
         const userId = targetUser || interaction.user;
         const user = await client.users.fetch(targetUser?.id || interaction.user.id);
@@ -122,8 +136,11 @@ export class Queries {
 
         // Staff roles defined in env file.
         const staffRoles = process.env.STAFF_ROLE_IDS?.split(',');
-        const isStaff = staffRoles?.some((roleID) => interaction.member?.roles instanceof GuildMemberRoleManager
-            && interaction.member.roles.cache.has(roleID));
+        const isStaff = staffRoles?.some(
+            (roleID) =>
+                interaction.member?.roles instanceof GuildMemberRoleManager &&
+                interaction.member.roles.cache.has(roleID)
+        );
 
         // Admins defined in env file.
         const adminIds = process.env.ADMIN_USER_IDS?.split(',');
@@ -135,7 +152,10 @@ export class Queries {
         this.user = user;
 
         if (!getData) {
-            await interaction.reply({ content: `⚠️ No data available for ${user}.`, ephemeral: true });
+            await interaction.reply({
+                content: `⚠️ No data available for ${user}.`,
+                ephemeral: true,
+            });
             return;
         }
 
@@ -153,15 +173,15 @@ export class Queries {
         const { user, msg } = this;
 
         // Return if the interaction and msg id do not match.
-        if (interaction.message.interaction?.id !== msg?.id) return interaction.deferUpdate();
+        if (interaction.message.interaction?.id !== msg?.id) {
+            return interaction.deferUpdate();
+        }
 
         if (interaction.user.id !== interaction.message.interaction?.user.id) {
-            const wrongUserMessage = new EmbedBuilder()
-                .setColor('#EC645D')
-                .addFields({
-                    name: `**${client.user?.username} - Query Checker**`,
-                    value: '**◎ Error:** Only the command executor can select an option!',
-                });
+            const wrongUserMessage = new EmbedBuilder().setColor('#EC645D').addFields({
+                name: `**${client.user?.username} - Query Checker**`,
+                value: '**◎ Error:** Only the command executor can select an option!',
+            });
 
             // Reply with an ephemeral message indicating the error
             await interaction.reply({ ephemeral: true, embeds: [wrongUserMessage] });
@@ -170,32 +190,34 @@ export class Queries {
 
         const { MAX_QUERIES_LIMIT } = process.env;
 
-        const noData = new EmbedBuilder()
-            .setColor('#EC645D')
-            .addFields({
-                name: `**${client.user?.username} - Query Checker**`,
-                value: '**◎ Error:** No data to reset.',
-            });
+        const noData = new EmbedBuilder().setColor('#EC645D').addFields({
+            name: `**${client.user?.username} - Query Checker**`,
+            value: '**◎ Error:** No data to reset.',
+        });
 
-        if (!user) return interaction.reply({ ephemeral: true, embeds: [noData] });
+        if (!user) {
+            return interaction.reply({ ephemeral: true, embeds: [noData] });
+        }
 
         const db = await getGptQueryData(user.id);
 
-        if (!db) return interaction.reply({ ephemeral: true, embeds: [noData] });
+        if (!db) {
+            return interaction.reply({ ephemeral: true, embeds: [noData] });
+        }
 
         if (db.blacklisted || db.whitelisted) {
-            const embed = new EmbedBuilder()
-                .setColor('#EC645D')
-                .addFields({
-                    name: `**${client.user?.username} - Query Checker**`,
-                    value: `**◎ Error:** ${user} is ${db.whitelisted ? 'whitelisted.' : 'blacklisted.'}`,
-                });
+            const embed = new EmbedBuilder().setColor('#EC645D').addFields({
+                name: `**${client.user?.username} - Query Checker**`,
+                value: `**◎ Error:** ${user} is ${db.whitelisted ? 'whitelisted.' : 'blacklisted.'}`,
+            });
 
             await interaction.reply({ ephemeral: true, embeds: [embed] });
             return;
         }
 
-        if (db.queriesRemaining === Number(MAX_QUERIES_LIMIT)) return interaction.reply({ ephemeral: true, embeds: [noData] });
+        if (db.queriesRemaining === Number(MAX_QUERIES_LIMIT)) {
+            return interaction.reply({ ephemeral: true, embeds: [noData] });
+        }
 
         // Reset cooldown
         const newData = await setGptQueryData(
@@ -205,7 +227,7 @@ export class Queries {
             Number(1),
             db.whitelisted,
             db.blacklisted,
-            db.threadId,
+            db.threadId
         );
 
         if (msg) {
@@ -226,15 +248,15 @@ export class Queries {
         const { user, msg } = this;
 
         // Return if the interaction and msg id do not match.
-        if (interaction.message.interaction?.id !== msg?.id) return interaction.deferUpdate();
+        if (interaction.message.interaction?.id !== msg?.id) {
+            return interaction.deferUpdate();
+        }
 
         if (interaction.user.id !== interaction.message.interaction?.user.id) {
-            const wrongUserMessage = new EmbedBuilder()
-                .setColor('#EC645D')
-                .addFields({
-                    name: `**${client.user?.username} - Query Checker**`,
-                    value: '**◎ Error:** Only the command executor can select an option!',
-                });
+            const wrongUserMessage = new EmbedBuilder().setColor('#EC645D').addFields({
+                name: `**${client.user?.username} - Query Checker**`,
+                value: '**◎ Error:** Only the command executor can select an option!',
+            });
 
             // Reply with an ephemeral message indicating the error
             await interaction.reply({ ephemeral: true, embeds: [wrongUserMessage] });
@@ -243,18 +265,18 @@ export class Queries {
 
         const { MAX_QUERIES_LIMIT } = process.env;
 
-        const noData = new EmbedBuilder()
-            .setColor('#EC645D')
-            .addFields({
-                name: `**${client.user?.username} - Query Checker**`,
-                value: '**◎ Error:** No data to reset.',
-            });
+        const noData = new EmbedBuilder().setColor('#EC645D').addFields({
+            name: `**${client.user?.username} - Query Checker**`,
+            value: '**◎ Error:** No data to reset.',
+        });
 
-        if (!user) return interaction.reply({ ephemeral: true, embeds: [noData] });
+        if (!user) {
+            return interaction.reply({ ephemeral: true, embeds: [noData] });
+        }
 
         const db = await getGptQueryData(user.id);
 
-        let newData;
+        let newData: UserData;
 
         if (db) {
             // Update whitelist status
@@ -265,7 +287,7 @@ export class Queries {
                 Number(1),
                 !db.whitelisted,
                 false,
-                db.threadId,
+                db.threadId
             );
         } else {
             // User has no existing data. Creating a new entry.
@@ -276,7 +298,7 @@ export class Queries {
                 Number(1),
                 true,
                 false,
-                '',
+                ''
             );
         }
 
@@ -298,15 +320,15 @@ export class Queries {
         const { user, msg } = this;
 
         // Return if the interaction and msg id do not match.
-        if (interaction.message.interaction?.id !== msg?.id) return interaction.deferUpdate();
+        if (interaction.message.interaction?.id !== msg?.id) {
+            return interaction.deferUpdate();
+        }
 
         if (interaction.user.id !== interaction.message.interaction?.user.id) {
-            const wrongUserMessage = new EmbedBuilder()
-                .setColor('#EC645D')
-                .addFields({
-                    name: `**${client.user?.username} - Query Checker**`,
-                    value: '**◎ Error:** Only the command executor can select an option!',
-                });
+            const wrongUserMessage = new EmbedBuilder().setColor('#EC645D').addFields({
+                name: `**${client.user?.username} - Query Checker**`,
+                value: '**◎ Error:** Only the command executor can select an option!',
+            });
 
             // Reply with an ephemeral message indicating the error
             await interaction.reply({ ephemeral: true, embeds: [wrongUserMessage] });
@@ -315,18 +337,18 @@ export class Queries {
 
         const { MAX_QUERIES_LIMIT } = process.env;
 
-        const noData = new EmbedBuilder()
-            .setColor('#EC645D')
-            .addFields({
-                name: `**${client.user?.username} - Query Checker**`,
-                value: '**◎ Error:** No data to reset.',
-            });
+        const noData = new EmbedBuilder().setColor('#EC645D').addFields({
+            name: `**${client.user?.username} - Query Checker**`,
+            value: '**◎ Error:** No data to reset.',
+        });
 
-        if (!user) return interaction.reply({ ephemeral: true, embeds: [noData] });
+        if (!user) {
+            return interaction.reply({ ephemeral: true, embeds: [noData] });
+        }
 
         const db = await getGptQueryData(user.id);
 
-        let newData;
+        let newData: UserData;
 
         if (db) {
             // Update blacklist status
@@ -337,7 +359,7 @@ export class Queries {
                 Number(1),
                 false,
                 !db.blacklisted,
-                db.threadId,
+                db.threadId
             );
         } else {
             // User has no existing data. Creating a new entry.
@@ -348,7 +370,7 @@ export class Queries {
                 Number(1),
                 false,
                 true,
-                '',
+                ''
             );
         }
 
@@ -370,33 +392,35 @@ export class Queries {
         const { user, msg } = this;
 
         // Return if the interaction and msg id do not match.
-        if (interaction.message.interaction?.id !== msg?.id) return interaction.deferUpdate();
+        if (interaction.message.interaction?.id !== msg?.id) {
+            return interaction.deferUpdate();
+        }
 
         if (interaction.user.id !== interaction.message.interaction?.user.id) {
-            const wrongUserMessage = new EmbedBuilder()
-                .setColor('#EC645D')
-                .addFields({
-                    name: `**${client.user?.username} - Query Checker**`,
-                    value: '**◎ Error:** Only the command executor can select an option!',
-                });
+            const wrongUserMessage = new EmbedBuilder().setColor('#EC645D').addFields({
+                name: `**${client.user?.username} - Query Checker**`,
+                value: '**◎ Error:** Only the command executor can select an option!',
+            });
 
             // Reply with an ephemeral message indicating the error
             await interaction.reply({ ephemeral: true, embeds: [wrongUserMessage] });
             return;
         }
 
-        const noData = new EmbedBuilder()
-            .setColor('#EC645D')
-            .addFields({
-                name: `**${client.user?.username} - Query Checker**`,
-                value: '**◎ Error:** No data to reset.',
-            });
+        const noData = new EmbedBuilder().setColor('#EC645D').addFields({
+            name: `**${client.user?.username} - Query Checker**`,
+            value: '**◎ Error:** No data to reset.',
+        });
 
-        if (!user) return interaction.reply({ ephemeral: true, embeds: [noData] });
+        if (!user) {
+            return interaction.reply({ ephemeral: true, embeds: [noData] });
+        }
 
         const db = await getGptQueryData(user.id);
 
-        if (!db) return interaction.reply({ ephemeral: true, embeds: [noData] });
+        if (!db) {
+            return interaction.reply({ ephemeral: true, embeds: [noData] });
+        }
 
         // Delete thread id
         const newData = await setGptQueryData(
@@ -406,7 +430,7 @@ export class Queries {
             Number(db.expiration) || 0,
             db.whitelisted || false,
             db.blacklisted || false,
-            '',
+            ''
         );
 
         if (msg) {

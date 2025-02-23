@@ -1,8 +1,5 @@
-import type { ArgsOf, Client } from 'discordx';
-import { Discord, On } from 'discordx';
-import {
-    ChannelType, EmbedBuilder, Message, User,
-} from 'discord.js';
+import { ChannelType, EmbedBuilder, type Message, type User } from 'discord.js';
+import { type ArgsOf, type Client, Discord, On } from 'discordx';
 import { handleGPTResponse, handleThreadCreation, runGPT } from '../utils/Util.js';
 
 @Discord()
@@ -20,8 +17,11 @@ export class MessageCreate {
     constructor() {
         this.threadsEnabled = process.env.ENABLE_MESSAGE_THREADS === 'true';
         this.commandUsageChannel = process.env.COMMAND_USAGE_CHANNEL;
-        this.allowedServers = process.env.ALLOWED_SERVER_IDS?.split(',').map((id) => id.trim()) || [];
-        this.excludedChannels = new Set(process.env.EXCLUDED_CHANNEL_IDS?.split(',').map((id) => id.trim()) || []);
+        this.allowedServers =
+            process.env.ALLOWED_SERVER_IDS?.split(',').map((id) => id.trim()) || [];
+        this.excludedChannels = new Set(
+            process.env.EXCLUDED_CHANNEL_IDS?.split(',').map((id) => id.trim()) || []
+        );
         this.supportServerInvite = process.env.SUPPORT_SERVER_INVITE;
     }
 
@@ -32,18 +32,24 @@ export class MessageCreate {
      */
     @On({ event: 'messageCreate' })
     async onMessage([message]: ArgsOf<'messageCreate'>, client: Client) {
-        if (message.author.bot) return;
+        if (message.author.bot) {
+            return;
+        }
 
         if (!message.guild) {
             await this.handleDirectMessage(message, client);
             return;
         }
 
-        if (!this.isServerAllowed(message.guild.id)) return;
+        if (!this.isServerAllowed(message.guild.id)) {
+            return;
+        }
 
         if (this.threadsEnabled) {
             const handled = await this.manageThreadsIfNeeded(message, client);
-            if (handled) return;
+            if (handled) {
+                return;
+            }
         }
 
         if (this.shouldRespond(message, client)) {
@@ -64,7 +70,9 @@ export class MessageCreate {
      * @returns true if the bot can operate in this server
      */
     private isServerAllowed(guildId: string): boolean {
-        if (this.allowedServers.length === 0) return true;
+        if (this.allowedServers.length === 0) {
+            return true;
+        }
         return this.allowedServers.includes(guildId);
     }
 
@@ -80,14 +88,12 @@ export class MessageCreate {
                 ? `[${client.user?.username} Discord server](${this.supportServerInvite})`
                 : `**${client.user?.username} Discord server**`;
 
-            const embed = new EmbedBuilder()
-                .setColor('#EC645D')
-                .addFields([
-                    {
-                        name: `**${client.user?.username}**`,
-                        value: `To better assist you, please use our bot within the ${replyMsg}.\nHead over there for a seamless experience. See you on the server!`,
-                    },
-                ]);
+            const embed = new EmbedBuilder().setColor('#EC645D').addFields([
+                {
+                    name: `**${client.user?.username}**`,
+                    value: `To better assist you, please use our bot within the ${replyMsg}.\nHead over there for a seamless experience. See you on the server!`,
+                },
+            ]);
 
             await message.reply({ embeds: [embed] });
         }
@@ -101,9 +107,13 @@ export class MessageCreate {
      * - Random chance (4%)
      */
     private shouldRespond(message: Message, client: Client): boolean {
-        if (this.excludedChannels.has(message.channel.id)) return false;
+        if (this.excludedChannels.has(message.channel.id)) {
+            return false;
+        }
 
-        if (message.mentions.users.size > 0 && !message.mentions.users.has(client.user!.id)) return false;
+        if (message.mentions.users.size > 0 && !message.mentions.users.has(client.user!.id)) {
+            return false;
+        }
 
         const chance = Math.random();
         const isQuestion = /^.{5,100}\?$/.test(message.content);
@@ -120,7 +130,8 @@ export class MessageCreate {
     private async manageThreadsIfNeeded(message: Message, client: Client): Promise<boolean> {
         if (!message.channel.isThread() && message.mentions.has(client.user!.id)) {
             const isReplyToAnotherUser = message.reference
-                ? (await message.channel.messages.fetch(`${message.reference.messageId}`)).author.id !== client.user!.id
+                ? (await message.channel.messages.fetch(`${message.reference.messageId}`)).author
+                      .id !== client.user!.id
                 : false;
 
             if (!isReplyToAnotherUser) {
@@ -147,9 +158,13 @@ export class MessageCreate {
         content: string,
         user: User,
         msg: Message,
-        client: Client,
+        client: Client
     ): Promise<void> {
-        if (msg.channel.type === ChannelType.GuildText || msg.channel.type === ChannelType.PublicThread || msg.channel.type === ChannelType.DM) {
+        if (
+            msg.channel.type === ChannelType.GuildText ||
+            msg.channel.type === ChannelType.PublicThread ||
+            msg.channel.type === ChannelType.DM
+        ) {
             await msg.channel.sendTyping();
         }
 
@@ -163,16 +178,25 @@ export class MessageCreate {
      */
     private async handleRepliedMessage(message: Message, client: Client): Promise<void> {
         try {
-            const repliedMessage = await message.channel.messages.fetch(`${message.reference!.messageId}`);
+            const repliedMessage = await message.channel.messages.fetch(
+                `${message.reference!.messageId}`
+            );
             const isBotReply = repliedMessage.author.id === client.user?.id;
             const strippedContent = message.content.replace(/<@!?(\d+)>/g, '').trim();
 
-            if (isBotReply && strippedContent.length === 0) return;
+            if (isBotReply && strippedContent.length === 0) {
+                return;
+            }
 
             if (isBotReply && message.author.id !== client.user?.id) {
                 await this.handleGPTResponse(message.content, message.author, message, client);
             } else if (message.mentions.has(`${client.user?.id}`) && !message.author.bot) {
-                await this.handleGPTResponse(repliedMessage.content, message.author, repliedMessage, client);
+                await this.handleGPTResponse(
+                    repliedMessage.content,
+                    message.author,
+                    repliedMessage,
+                    client
+                );
             }
         } catch (e) {
             console.error('Error fetching or processing the replied message:', e);

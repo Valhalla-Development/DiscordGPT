@@ -1,27 +1,27 @@
 import {
     AttachmentBuilder,
     ChannelType,
-    codeBlock,
     CommandInteraction,
     EmbedBuilder,
-    Guild,
-    GuildTextBasedChannel,
+    type Guild,
+    type GuildTextBasedChannel,
     Message,
-    PublicThreadChannel,
-    TextChannel,
+    type PublicThreadChannel,
+    type TextChannel,
     ThreadAutoArchiveDuration,
-    ThreadChannel,
-    User,
+    type ThreadChannel,
+    type User,
+    codeBlock,
 } from 'discord.js';
 import type { Client } from 'discordx';
 import type { TextContentBlock } from 'openai/resources/beta/threads';
 import '@colors/colors';
-import OpenAI from 'openai';
-import Keyv from 'keyv';
 import KeyvSqlite from '@keyv/sqlite';
+import Keyv from 'keyv';
 import moment from 'moment';
+import OpenAI from 'openai';
 
-interface UserData {
+export interface UserData {
     totalQueries: number;
     queriesRemaining: number;
     expiration: number;
@@ -35,7 +35,10 @@ interface EntryValue {
     totalQueries: number;
 }
 
-const keyv = new Keyv({ store: new KeyvSqlite({ uri: 'sqlite://src/data/db.sqlite' }), namespace: 'userData' });
+const keyv = new Keyv({
+    store: new KeyvSqlite({ uri: 'sqlite://src/data/db.sqlite' }),
+    namespace: 'userData',
+});
 keyv.on('error', (err) => console.log('[keyv] Connection Error', err));
 
 /**
@@ -85,12 +88,14 @@ export async function getCommandIds(client: Client): Promise<Record<string, stri
  */
 export async function loadAssistant(
     query: string,
-    user: User,
+    user: User
 ): Promise<string | string[] | Error | boolean> {
     const userQueryData = await getGptQueryData(user.id);
     const str = query.replace(/<@!?(\d+)>/g, '');
 
-    if (str.length < 4) return 'Please enter a valid query, with a minimum length of 4 characters.';
+    if (str.length < 4) {
+        return 'Please enter a valid query, with a minimum length of 4 characters.';
+    }
 
     try {
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -99,9 +104,10 @@ export async function loadAssistant(
         // Fetch existing thread or create a new one
         let thread: OpenAI.Beta.Threads.Thread;
         try {
-            thread = userQueryData && userQueryData.threadId
-                ? await openai.beta.threads.retrieve(userQueryData.threadId)
-                : await openai.beta.threads.create();
+            thread =
+                userQueryData && userQueryData.threadId
+                    ? await openai.beta.threads.retrieve(userQueryData.threadId)
+                    : await openai.beta.threads.create();
         } catch {
             thread = await openai.beta.threads.create();
         }
@@ -115,55 +121,68 @@ export async function loadAssistant(
                 Number(userQueryData.expiration) || 0,
                 userQueryData.whitelisted || false,
                 userQueryData.blacklisted || false,
-                thread.id,
+                thread.id
             );
         }
 
         // Check for existing run
-        const existingRun = await openai.beta.threads.runs.list(thread.id)
+        const existingRun = await openai.beta.threads.runs
+            .list(thread.id)
             .then((response) => ['queued', 'in_progress'].includes(response?.data?.[0]?.status))
             .catch(() => false);
 
-        if (existingRun) return true;
+        if (existingRun) {
+            return true;
+        }
 
         // Create a new message and run
         await openai.beta.threads.messages.create(thread.id, { role: 'user', content: str });
-        const run = await openai.beta.threads.runs.create(thread.id, { assistant_id: assistant.id });
+        const run = await openai.beta.threads.runs.create(thread.id, {
+            assistant_id: assistant.id,
+        });
 
         console.log(
-            `${'◆◆◆◆◆◆'.rainbow.bold} ${moment().format('MMM D, h:mm A')} ${reversedRainbow('◆◆◆◆◆◆')}\n`
-            + `${'🚀 Query initiated by '.brightBlue.bold}${user.displayName.underline.brightMagenta.bold}\n`
-            + `${'📝 Query: '.brightBlue.bold}${str.brightYellow.bold}`,
+            `${'◆◆◆◆◆◆'.rainbow.bold} ${moment().format('MMM D, h:mm A')} ${reversedRainbow('◆◆◆◆◆◆')}\n` +
+                `${'🚀 Query initiated by '.brightBlue.bold}${user.displayName.underline.brightMagenta.bold}\n` +
+                `${'📝 Query: '.brightBlue.bold}${str.brightYellow.bold}`
         );
 
         // Wait for completion
         const waitForCompletion = async (): Promise<void> => {
             const retrieve = await openai.beta.threads.runs.retrieve(thread.id, run.id);
 
-            console.log(retrieve.status === 'completed'
-                ? `${'✅ Status: '.brightBlue.bold}${retrieve.status.brightGreen.bold}`
-                : `${'🔄 Status: '.brightBlue.bold}${retrieve.status.brightYellow.bold}`);
+            console.log(
+                retrieve.status === 'completed'
+                    ? `${'✅ Status: '.brightBlue.bold}${retrieve.status.brightGreen.bold}`
+                    : `${'🔄 Status: '.brightBlue.bold}${retrieve.status.brightYellow.bold}`
+            );
 
-            if (retrieve.status === 'completed') return;
-            if (!['in_progress', 'queued'].includes(retrieve.status)) {
-                throw new Error(`completion\nStatus: ${retrieve.status}${retrieve.last_error ? `\nError Code: ${retrieve.last_error.code}` : ''}`);
+            if (retrieve.status === 'completed') {
+                return;
             }
-            await new Promise((resolve) => { setTimeout(resolve, 2000); });
+            if (!['in_progress', 'queued'].includes(retrieve.status)) {
+                throw new Error(
+                    `completion\nStatus: ${retrieve.status}${retrieve.last_error ? `\nError Code: ${retrieve.last_error.code}` : ''}`
+                );
+            }
+            await new Promise((resolve) => {
+                setTimeout(resolve, 2000);
+            });
             await waitForCompletion();
         };
 
         await waitForCompletion();
 
-        console.log(`${'🎉 Completed query for '.brightBlue.bold}${user.displayName.underline.brightMagenta.bold}\n`);
+        console.log(
+            `${'🎉 Completed query for '.brightBlue.bold}${user.displayName.underline.brightMagenta.bold}\n`
+        );
 
         // Process and return response
         const messages = await openai.beta.threads.messages.list(thread.id);
         const textValue = (messages.data[0].content[0] as TextContentBlock)?.text?.value;
         const responseText = processString(textValue);
 
-        return responseText.length >= 1950
-            ? splitMessages(responseText, 1950)
-            : responseText;
+        return responseText.length >= 1950 ? splitMessages(responseText, 1950) : responseText;
     } catch (error) {
         console.error(error);
         return error as Error;
@@ -181,12 +200,16 @@ export async function loadAssistant(
 export async function runTTS(str: string, user: User): Promise<AttachmentBuilder | string | Error> {
     // Check if the user has available queries
     const availabilityCheck = await checkGptAvailability(user.id);
-    if (typeof availabilityCheck === 'string') return availabilityCheck;
+    if (typeof availabilityCheck === 'string') {
+        return availabilityCheck;
+    }
 
     try {
         // Log the start of the TTS process with colorful formatting
-        console.log(`${'◆◆◆◆◆◆'.rainbow.bold} ${moment().format('MMM D, h:mm A')} ${reversedRainbow('◆◆◆◆◆◆')}\n`
-            + `${'🚀 Text-to-Speech initiated by '.brightBlue.bold}${user.displayName.underline.brightMagenta.bold}`);
+        console.log(
+            `${'◆◆◆◆◆◆'.rainbow.bold} ${moment().format('MMM D, h:mm A')} ${reversedRainbow('◆◆◆◆◆◆')}\n` +
+                `${'🚀 Text-to-Speech initiated by '.brightBlue.bold}${user.displayName.underline.brightMagenta.bold}`
+        );
 
         // Initialize OpenAI client
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -199,7 +222,9 @@ export async function runTTS(str: string, user: User): Promise<AttachmentBuilder
         });
 
         // Log completion of TTS generation
-        console.log(`${'🎉 Completed text-to-speech for '.brightBlue.bold}${user.displayName.underline.brightMagenta.bold}`);
+        console.log(
+            `${'🎉 Completed text-to-speech for '.brightBlue.bold}${user.displayName.underline.brightMagenta.bold}`
+        );
 
         // Convert the audio to a Discord-compatible attachment
         return new AttachmentBuilder(Buffer.from(await tts.arrayBuffer()), { name: 'tts.mp3' });
@@ -227,7 +252,7 @@ export async function setGptQueryData(
     expiration: number,
     whitelisted: boolean,
     blacklisted: boolean,
-    threadId: string,
+    threadId: string
 ): Promise<UserData> {
     // Create a UserData object with the provided parameters
     const data: UserData = {
@@ -252,7 +277,7 @@ export async function setGptQueryData(
  * @returns The user's query data, or false if no data is found.
  */
 export async function getGptQueryData(userId: string): Promise<UserData | false> {
-    const data = await keyv.get(userId) as UserData | null;
+    const data = (await keyv.get(userId)) as UserData | null;
     return data || false;
 }
 
@@ -281,7 +306,7 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
             expirationTime.getTime(),
             false,
             false,
-            '',
+            ''
         );
         return true; // User can make a query
     }
@@ -300,7 +325,7 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
             1,
             userQueryData.whitelisted,
             userQueryData.blacklisted,
-            userQueryData.threadId,
+            userQueryData.threadId
         );
         return true;
     }
@@ -318,7 +343,7 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
                 expirationTime.getTime(),
                 userQueryData.whitelisted,
                 userQueryData.blacklisted,
-                userQueryData.threadId,
+                userQueryData.threadId
             );
             return true;
         }
@@ -335,7 +360,7 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
         userQueryData.expiration === 1 ? expirationTime.getTime() : userQueryData.expiration,
         userQueryData.whitelisted,
         userQueryData.blacklisted,
-        userQueryData.threadId,
+        userQueryData.threadId
     );
     return true;
 }
@@ -350,7 +375,9 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
 export async function runGPT(content: string, user: User): Promise<string | string[] | boolean> {
     // Check if the user has available queries
     const isGptAvailable = await checkGptAvailability(user.id);
-    if (typeof isGptAvailable === 'string') return isGptAvailable;
+    if (typeof isGptAvailable === 'string') {
+        return isGptAvailable;
+    }
 
     // Load the Assistant for the message content
     const response = await loadAssistant(content.trim(), user);
@@ -376,9 +403,11 @@ export function splitMessages(content: string, length: number): string[] {
     let remainingContent = content.trim();
 
     while (remainingContent.length > 0) {
-        const chunkEnd = remainingContent.length <= length
-            ? remainingContent.length
-            : remainingContent.lastIndexOf(' ', length) || remainingContent.indexOf(' ', length);
+        const chunkEnd =
+            remainingContent.length <= length
+                ? remainingContent.length
+                : remainingContent.lastIndexOf(' ', length) ||
+                  remainingContent.indexOf(' ', length);
 
         chunks.push(remainingContent.slice(0, chunkEnd).trim());
         remainingContent = remainingContent.slice(chunkEnd).trim();
@@ -396,10 +425,17 @@ export function splitMessages(content: string, length: number): string[] {
 export function processString(str: string): string {
     const embedLinks = process.env.ENABLE_EMBED_LINKS !== 'false';
 
-    return str.replace(/【.*?】/g, '')
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => (text === url
-            ? embedLinks ? url : `<${url}>`
-            : embedLinks ? `[${text}](${url})` : `[${text}](<${url}>)`));
+    return str
+        .replace(/【.*?】/g, '')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) =>
+            text === url
+                ? embedLinks
+                    ? url
+                    : `<${url}>`
+                : embedLinks
+                  ? `[${text}](${url})`
+                  : `[${text}](<${url}>)`
+        );
 }
 
 /**
@@ -409,7 +445,9 @@ export function processString(str: string): string {
  * @returns A Promise that resolves to an object containing the total queries sum and
  *          an array of the top 10 entries, or an Error if something goes wrong.
  */
-export async function fetchAllData(): Promise<{ totalQueriesSum: number; top10Entries: EntryValue[] } | Error> {
+export async function fetchAllData(): Promise<
+    { totalQueriesSum: number; top10Entries: EntryValue[] } | Error
+> {
     const entries: EntryValue[] = [];
     let totalQueriesSum = 0;
 
@@ -423,9 +461,7 @@ export async function fetchAllData(): Promise<{ totalQueriesSum: number; top10En
         // Return the results: total queries sum and top 10 sorted entries
         return {
             totalQueriesSum,
-            top10Entries: entries
-                .sort((a, b) => b.totalQueries - a.totalQueries)
-                .slice(0, 10),
+            top10Entries: entries.sort((a, b) => b.totalQueries - a.totalQueries).slice(0, 10),
         };
     } catch (error) {
         return error as Error;
@@ -458,7 +494,12 @@ export async function handleError(client: Client, error: unknown): Promise<void>
 
     console.error(error);
 
-    if (process.env.ENABLE_LOGGING?.toLowerCase() !== 'true' || !process.env.ERROR_LOGGING_CHANNEL) return;
+    if (
+        process.env.ENABLE_LOGGING?.toLowerCase() !== 'true' ||
+        !process.env.ERROR_LOGGING_CHANNEL
+    ) {
+        return;
+    }
 
     /**
      * Truncates the description if it exceeds the maximum length.
@@ -467,14 +508,18 @@ export async function handleError(client: Client, error: unknown): Promise<void>
      */
     function truncateDescription(description: string): string {
         const maxLength = 4096;
-        if (description.length <= maxLength) return description;
+        if (description.length <= maxLength) {
+            return description;
+        }
 
         const numTruncatedChars = description.length - maxLength;
         return `${description.slice(0, maxLength)}... ${numTruncatedChars} more`;
     }
 
     try {
-        const channel = client.channels.cache.get(process.env.ERROR_LOGGING_CHANNEL) as TextChannel | undefined;
+        const channel = client.channels.cache.get(process.env.ERROR_LOGGING_CHANNEL) as
+            | TextChannel
+            | undefined;
 
         if (!channel || channel.type !== ChannelType.GuildText) {
             console.error(`Invalid logging channel: ${process.env.ERROR_LOGGING_CHANNEL}`);
@@ -518,9 +563,7 @@ type ThreadContext = {
  * @returns Promise<boolean> - true if the thread was handled, false otherwise
  */
 export async function handleThreadCreation(context: ThreadContext): Promise<boolean> {
-    const {
-        source, client, user, query, commandUsageChannel,
-    } = context;
+    const { source, client, user, query, commandUsageChannel } = context;
     const threadName = `Conversation with ${user.username}`;
     const { guild } = source;
 
@@ -556,7 +599,7 @@ export async function handleThreadCreation(context: ThreadContext): Promise<bool
     try {
         const activeThreads = await guild?.channels.fetchActiveThreads();
         const existingThread = Array.from(activeThreads?.threads.values() ?? []).find(
-            (thread) => thread.name === threadName && !thread.archived && !thread.locked,
+            (thread) => thread.name === threadName && !thread.archived && !thread.locked
         );
 
         if (existingThread) {
@@ -575,7 +618,9 @@ export async function handleThreadCreation(context: ThreadContext): Promise<bool
                 await existingThread.send({
                     content: `**${user.displayName}'s query:** ${query}\n\n`,
                 });
-                const initialMessage = await existingThread.send({ content: 'Generating response...' });
+                const initialMessage = await existingThread.send({
+                    content: 'Generating response...',
+                });
 
                 await existingThread.sendTyping();
 
@@ -624,21 +669,22 @@ export async function handleThreadCreation(context: ThreadContext): Promise<bool
             await source.deleteReply();
         }
 
-        const thread = source instanceof CommandInteraction
-            ? await (source.channel.type === ChannelType.GuildText
-                ? source.channel.threads.create({
-                    name: threadName,
-                    autoArchiveDuration: ThreadAutoArchiveDuration.OneHour,
-                    reason: `Thread created for conversation with ${user.tag}`,
-                })
-                : null)
-            : await (source.channel.type === ChannelType.GuildText
-                ? (source as Message).startThread({
-                    name: threadName,
-                    autoArchiveDuration: ThreadAutoArchiveDuration.OneHour,
-                    reason: `Thread created for conversation with ${user.tag}`,
-                })
-                : null);
+        const thread =
+            source instanceof CommandInteraction
+                ? await (source.channel.type === ChannelType.GuildText
+                      ? source.channel.threads.create({
+                            name: threadName,
+                            autoArchiveDuration: ThreadAutoArchiveDuration.OneHour,
+                            reason: `Thread created for conversation with ${user.tag}`,
+                        })
+                      : null)
+                : await (source.channel.type === ChannelType.GuildText
+                      ? (source as Message).startThread({
+                            name: threadName,
+                            autoArchiveDuration: ThreadAutoArchiveDuration.OneHour,
+                            reason: `Thread created for conversation with ${user.tag}`,
+                        })
+                      : null);
 
         if (!thread) {
             throw new Error('Failed to create thread: Invalid channel type');
@@ -686,7 +732,8 @@ export async function handleThreadCreation(context: ThreadContext): Promise<bool
         console.error('Error in thread creation:', error);
         await handleError(client, error);
 
-        const errorMessage = 'Sorry, I couldn\'t create a thread. Please try again later or contact support.';
+        const errorMessage =
+            "Sorry, I couldn't create a thread. Please try again later or contact support.";
         if (source instanceof CommandInteraction) {
             await source.editReply({ content: errorMessage });
         } else {
@@ -707,12 +754,13 @@ export async function handleGPTResponse(
     response: string | string[] | boolean,
     source: Message | CommandInteraction,
     client: Client,
-    editMessage?: Message,
+    editMessage?: Message
 ): Promise<void> {
     try {
-        const content = source instanceof Message
-            ? source.content
-            : source.options.get('query')?.value as string || '';
+        const content =
+            source instanceof Message
+                ? source.content
+                : (source.options.get('query')?.value as string) || '';
 
         // Handle boolean response (usually rate limiting)
         if (typeof response === 'boolean') {
@@ -734,17 +782,22 @@ export async function handleGPTResponse(
         if (Array.isArray(response)) {
             if (editMessage) {
                 await editMessage.edit({ content: response[0] });
-                await (editMessage.channel as GuildTextBasedChannel | PublicThreadChannel).send({ content: response[1] });
+                await (editMessage.channel as GuildTextBasedChannel | PublicThreadChannel).send({
+                    content: response[1],
+                });
             } else if (source instanceof CommandInteraction) {
                 await source.editReply({ content: response[0] });
                 await source.followUp({ content: response[1] });
             } else {
-                const textChannel = source.channel?.isTextBased() && 'send' in source.channel
-                    ? source.channel
-                    : null;
+                const textChannel =
+                    source.channel?.isTextBased() && 'send' in source.channel
+                        ? source.channel
+                        : null;
 
                 if (!textChannel) {
-                    throw new Error('Cannot send message: Channel is not text-based or does not support sending messages');
+                    throw new Error(
+                        'Cannot send message: Channel is not text-based or does not support sending messages'
+                    );
                 }
 
                 await source.reply({ content: response[0] });
@@ -766,7 +819,7 @@ export async function handleGPTResponse(
 async function replyToSource(
     source: Message | CommandInteraction,
     options: { content: string },
-    editMessage?: Message,
+    editMessage?: Message
 ): Promise<void> {
     if (editMessage) {
         await editMessage.edit(options);

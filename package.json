@@ -10,11 +10,12 @@
     "url": "https://github.com/Valhalla-Development/DiscordGPT/issues"
   },
   "type": "module",
-  "main": "build/Main.js",
   "scripts": {
-    "audit": "eslint . --ext .ts --format codeframe --max-warnings 0",
-    "dev": "tsc-watch --onSuccess \"node ./build/Main.js\" --onFailure \"echo Compilation failed\"",
-    "start": "rm -rf build && tsc && node build/Main.js"
+    "lint": "tsc --noEmit -p tsconfig.json && biome check --files-ignore-unknown=true --diagnostic-level=error --no-errors-on-unmatched src",
+    "lint:fix": "biome check --write --no-errors-on-unmatched --files-ignore-unknown=true src",
+    "dev": "bun --watch src/Main.ts",
+    "start": "bun src/Main.ts",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@colors/colors": "^1.6.0",
@@ -30,15 +31,10 @@
     "systeminformation": "^5.24.6"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
     "@types/node": "^22.10.3",
-    "@typescript-eslint/eslint-plugin": "^8.19.0",
-    "@typescript-eslint/parser": "^8.19.0",
-    "eslint": "8.57.0",
-    "eslint-config-airbnb": "^19.0.4",
-    "eslint-formatter-codeframe": "^7.32.1",
-    "eslint-plugin-import": "^2.31.0",
-    "tsc-watch": "6.2.1",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "ultracite": "^4.1.20"
   },
   "engines": {
     "node": ">=18"

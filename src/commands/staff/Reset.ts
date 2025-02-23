@@ -1,7 +1,11 @@
-import { Discord, Slash, SlashOption } from 'discordx';
-import type { CommandInteraction } from 'discord.js';
-import { ApplicationCommandOptionType, GuildMember, PermissionsBitField } from 'discord.js';
 import { Category } from '@discordx/utilities';
+import {
+    ApplicationCommandOptionType,
+    type CommandInteraction,
+    type GuildMember,
+    PermissionsBitField,
+} from 'discord.js';
+import { Discord, Slash, SlashOption } from 'discordx';
 import { getGptQueryData, setGptQueryData } from '../../utils/Util.js';
 
 @Discord()
@@ -24,16 +28,19 @@ export class Reset {
             required: true,
             type: ApplicationCommandOptionType.User,
         })
-            user: GuildMember,
+        user: GuildMember,
 
-            interaction: CommandInteraction,
+        interaction: CommandInteraction
     ) {
         // Check if command was executed by an admin defined in the environment variable.
         const adminIds = process.env.ADMIN_USER_IDS?.split(',');
         const isAdmin = adminIds?.some((id) => id === interaction.user.id);
 
         if (interaction.user.id === user.id && !isAdmin) {
-            await interaction.reply({ content: '⚠️ You can\'t perform this action on yourself', ephemeral: true });
+            await interaction.reply({
+                content: "⚠️ You can't perform this action on yourself",
+                ephemeral: true,
+            });
             return;
         }
 
@@ -43,16 +50,29 @@ export class Reset {
         const db = await getGptQueryData(user.id);
 
         // User has no data saved
-        if (!db) return interaction.reply({ ephemeral: true, content: `⚠️ ${user} has no available data to reset.` });
+        if (!db) {
+            return interaction.reply({
+                ephemeral: true,
+                content: `⚠️ ${user} has no available data to reset.`,
+            });
+        }
 
         // User is either whitelisted or blacklisted
         if (db.blacklisted || db.whitelisted) {
-            await interaction.reply({ ephemeral: true, content: `⚠️ ${user} is ${db.whitelisted ? 'whitelisted.' : 'blacklisted.'}` });
+            await interaction.reply({
+                ephemeral: true,
+                content: `⚠️ ${user} is ${db.whitelisted ? 'whitelisted.' : 'blacklisted.'}`,
+            });
             return;
         }
 
         // User has data, but has not used any queries.
-        if (db.queriesRemaining === Number(MAX_QUERIES_LIMIT)) return interaction.reply({ ephemeral: true, content: `⚠️ ${user} has not used any available queries.` });
+        if (db.queriesRemaining === Number(MAX_QUERIES_LIMIT)) {
+            return interaction.reply({
+                ephemeral: true,
+                content: `⚠️ ${user} has not used any available queries.`,
+            });
+        }
 
         // Reset cooldown
         await setGptQueryData(
@@ -62,9 +82,12 @@ export class Reset {
             Number(1),
             db.whitelisted,
             db.blacklisted,
-            db.threadId,
+            db.threadId
         );
 
-        await interaction.reply({ ephemeral: true, content: `${user} has had their usages reset.` });
+        await interaction.reply({
+            ephemeral: true,
+            content: `${user} has had their usages reset.`,
+        });
     }
 }

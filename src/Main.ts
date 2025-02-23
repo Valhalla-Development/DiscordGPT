@@ -8,8 +8,12 @@ import { handleError } from './utils/Util.js';
  * The Discord.js client instance.
  */
 const client = new Client({
-    intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMessages, IntentsBitField.Flags.MessageContent,
-        IntentsBitField.Flags.DirectMessages],
+    intents: [
+        IntentsBitField.Flags.Guilds,
+        IntentsBitField.Flags.GuildMessages,
+        IntentsBitField.Flags.MessageContent,
+        IntentsBitField.Flags.DirectMessages,
+    ],
     partials: [Partials.Channel],
     silent: true,
     botGuilds: process.env.GUILDS ? process.env.GUILDS.split(',') : undefined,
@@ -44,18 +48,41 @@ async function run() {
     const invalidBool = (v: string) => `${v} must be "true" or "false".`;
 
     const required = [
-        'BOT_TOKEN', 'OPENAI_API_KEY', 'OPENAI_ASSISTANT_ID', 'MAX_QUERIES_LIMIT',
-        'ADMIN_USER_IDS', 'STAFF_ROLE_IDS',
+        'BOT_TOKEN',
+        'OPENAI_API_KEY',
+        'OPENAI_ASSISTANT_ID',
+        'MAX_QUERIES_LIMIT',
+        'ADMIN_USER_IDS',
+        'STAFF_ROLE_IDS',
     ];
-    const booleans = ['ENABLE_DIRECT_MESSAGES', 'ENABLE_LOGGING', 'ENABLE_EMBED_LINKS', 'ENABLE_TTS', 'ENABLE_MESSAGE_THREADS'];
+    const booleans = [
+        'ENABLE_DIRECT_MESSAGES',
+        'ENABLE_LOGGING',
+        'ENABLE_EMBED_LINKS',
+        'ENABLE_TTS',
+        'ENABLE_MESSAGE_THREADS',
+    ];
 
-    required.forEach((v) => { if (!process.env[v]) throw new Error(missingVar(v)); });
-    booleans.forEach((v) => {
-        if (process.env[v] !== 'true' && process.env[v] !== 'false') throw new Error(invalidBool(v));
-    });
+    for (const v of required) {
+        if (!process.env[v]) {
+            throw new Error(missingVar(v));
+        }
+    }
 
-    if (process.env.ENABLE_LOGGING === 'true' && (!process.env.ERROR_LOGGING_CHANNEL && !process.env.COMMAND_LOGGING_CHANNEL)) {
-        throw new Error('ERROR_LOGGING_CHANNEL and COMMAND_LOGGING_CHANNEL are required when logging is enabled.');
+    for (const v of booleans) {
+        if (process.env[v] !== 'true' && process.env[v] !== 'false') {
+            throw new Error(invalidBool(v));
+        }
+    }
+
+    if (
+        process.env.ENABLE_LOGGING === 'true' &&
+        !process.env.ERROR_LOGGING_CHANNEL &&
+        !process.env.COMMAND_LOGGING_CHANNEL
+    ) {
+        throw new Error(
+            'ERROR_LOGGING_CHANNEL and COMMAND_LOGGING_CHANNEL are required when logging is enabled.'
+        );
     }
 
     /**
@@ -63,9 +90,10 @@ async function run() {
      * @param ms - The time in milliseconds to delay the execution of the function.
      * @returns A promise that resolves after the specified time has passed.
      */
-    const sleep = (ms: number): Promise<void> => new Promise<void>((resolve) => {
-        setTimeout(resolve, ms);
-    });
+    const sleep = (ms: number): Promise<void> =>
+        new Promise<void>((resolve) => {
+            setTimeout(resolve, ms);
+        });
     const time = 200;
 
     /**

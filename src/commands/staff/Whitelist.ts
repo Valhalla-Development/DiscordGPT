@@ -1,9 +1,11 @@
-import {
-    Discord, Slash, SlashChoice, SlashOption,
-} from 'discordx';
-import type { CommandInteraction } from 'discord.js';
-import { ApplicationCommandOptionType, GuildMember, PermissionsBitField } from 'discord.js';
 import { Category } from '@discordx/utilities';
+import {
+    ApplicationCommandOptionType,
+    type CommandInteraction,
+    type GuildMember,
+    PermissionsBitField,
+} from 'discord.js';
+import { Discord, Slash, SlashChoice, SlashOption } from 'discordx';
 import { getGptQueryData, setGptQueryData } from '../../utils/Util.js';
 
 @Discord()
@@ -20,26 +22,26 @@ export class Whitelist {
      * @param client - The Discord client.
      */
     async whitelist(
-    @SlashChoice({ name: 'Add', value: 'add' })
-    @SlashChoice({ name: 'Remove', value: 'remove' })
-    @SlashChoice({ name: 'Check', value: 'check' })
-    @SlashOption({
-        description: 'Whitelist',
-        name: 'option',
-        required: true,
-        type: ApplicationCommandOptionType.String,
-    })
+        @SlashChoice({ name: 'Add', value: 'add' })
+        @SlashChoice({ name: 'Remove', value: 'remove' })
+        @SlashChoice({ name: 'Check', value: 'check' })
+        @SlashOption({
+            description: 'Whitelist',
+            name: 'option',
+            required: true,
+            type: ApplicationCommandOptionType.String,
+        })
         option: string,
 
-    @SlashOption({
-        description: 'User',
-        name: 'user',
-        required: true,
-        type: ApplicationCommandOptionType.User,
-    })
+        @SlashOption({
+            description: 'User',
+            name: 'user',
+            required: true,
+            type: ApplicationCommandOptionType.User,
+        })
         user: GuildMember,
 
-        interaction: CommandInteraction,
+        interaction: CommandInteraction
     ) {
         // Check if command was executed by an admin defined in the environment variable.
         const adminIds = process.env.ADMIN_USER_IDS?.split(',');
@@ -47,7 +49,7 @@ export class Whitelist {
 
         if (interaction.user.id === user.id && !isAdmin) {
             await interaction.reply({
-                content: '⚠️ You can\'t perform this action on yourself',
+                content: "⚠️ You can't perform this action on yourself",
                 ephemeral: true,
             });
             return;
@@ -70,7 +72,10 @@ export class Whitelist {
         if (option === 'add') {
             // User is already whitelisted.
             if (getDb && getDb.whitelisted) {
-                await interaction.reply({ content: '⚠️ User Already Whitelisted.', ephemeral: true });
+                await interaction.reply({
+                    content: '⚠️ User Already Whitelisted.',
+                    ephemeral: true,
+                });
                 return;
             }
 
@@ -82,10 +87,11 @@ export class Whitelist {
                 Number(1),
                 true,
                 false,
-                getDb ? getDb.threadId : '',
+                getDb ? getDb.threadId : ''
             );
             await interaction.reply({
-                content: '✅ User Whitelisted - The user has been successfully added to the whitelist.',
+                content:
+                    '✅ User Whitelisted - The user has been successfully added to the whitelist.',
                 ephemeral: true,
             });
         }
@@ -106,10 +112,11 @@ export class Whitelist {
                 Number(1),
                 false,
                 false,
-                getDb.threadId,
+                getDb.threadId
             );
             await interaction.reply({
-                content: '✅ User Removed - The user has been successfully removed from the whitelist.',
+                content:
+                    '✅ User Removed - The user has been successfully removed from the whitelist.',
                 ephemeral: true,
             });
         }

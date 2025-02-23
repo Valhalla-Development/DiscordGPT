@@ -1,5 +1,4 @@
-import type { Client } from 'discordx';
-import { Discord, Once } from 'discordx';
+import { type Client, Discord, Once } from 'discordx';
 import si from 'systeminformation';
 import '@colors/colors';
 import { ActivityType, version } from 'discord.js';
@@ -37,9 +36,14 @@ export class Ready {
                 {
                     title: `${client.user?.username} Stats`,
                     content: [
-                        `${'>>'.red} Users: `.white + client.guilds.cache.reduce((acc: number, guild) => acc + guild.memberCount, 0).toLocaleString('en').red,
-                        `${'>>'.green} Guilds: `.white + client.guilds.cache.size.toLocaleString('en').green,
-                        `${'>>'.yellow} Slash Commands: `.white + `${client.application?.commands.cache.size ?? 0}`.yellow,
+                        `${'>>'.red} Users: `.white +
+                            client.guilds.cache
+                                .reduce((acc: number, guild) => acc + guild.memberCount, 0)
+                                .toLocaleString('en').red,
+                        `${'>>'.green} Guilds: `.white +
+                            client.guilds.cache.size.toLocaleString('en').green,
+                        `${'>>'.yellow} Slash Commands: `.white +
+                            `${client.application?.commands.cache.size ?? 0}`.yellow,
                         `${'>>'.blue} Events: `.white + client.eventNames().length.toString().blue,
                     ],
                 },
@@ -47,7 +51,9 @@ export class Ready {
                     title: `${client.user?.username} Specs`,
                     content: [
                         `${`${'>>'.magenta} Node: `.white}${process.version.magenta}${' on '.white}${`${process.platform} ${process.arch}`.magenta}`,
-                        `${'>>'.cyan} Memory: `.white + `${realMemUsed.toLocaleString('en')}/${totalMemory.toLocaleString('en')} MB`.cyan,
+                        `${'>>'.cyan} Memory: `.white +
+                            `${realMemUsed.toLocaleString('en')}/${totalMemory.toLocaleString('en')} MB`
+                                .cyan,
                         `${'>>'.red} CPU: `.white + `${cpu.vendor} ${cpu.brand}`.red,
                         `${'>>'.yellow} Discord.js: `.white + `v${version}`.yellow,
                         `${'>>'.blue} Version: `.white + `v${process.env.npm_package_version}`.blue,
@@ -56,16 +62,22 @@ export class Ready {
                 {
                     title: `${client.user?.username} Invite Link`,
                     content: [
-                        `${'>>'.blue} `.white + `https://discordapp.com/oauth2/authorize?client_id=${client.user?.id}&scope=bot%20applications.commands&permissions=535327927376`.blue.underline,
+                        `${'>>'.blue} `.white +
+                            `https://discordapp.com/oauth2/authorize?client_id=${client.user?.id}&scope=bot%20applications.commands&permissions=535327927376`
+                                .blue.underline,
                     ],
                 },
             ];
 
             console.log(`\n${'='.repeat(50).bold}`);
-            sections.forEach((section) => {
-                if (section.title) console.log(`\n>>> ${section.title} <<<`.magenta.bold);
-                section.content.forEach((line) => console.log(`${line}`.bold));
-            });
+            for (const section of sections) {
+                if (section.title) {
+                    console.log(`\n>>> ${section.title} <<<`.magenta.bold);
+                }
+                for (const line of section.content) {
+                    console.log(`${line}`.bold);
+                }
+            }
             console.log(`${'='.repeat(50).bold}`);
         }
 

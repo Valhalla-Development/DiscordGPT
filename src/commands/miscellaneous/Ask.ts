@@ -1,8 +1,6 @@
-import {
-    Client, Discord, Slash, SlashOption,
-} from 'discordx';
-import { ApplicationCommandOptionType, ChannelType, CommandInteraction } from 'discord.js';
 import { Category } from '@discordx/utilities';
+import { ApplicationCommandOptionType, ChannelType, type CommandInteraction } from 'discord.js';
+import { type Client, Discord, Slash, SlashOption } from 'discordx';
 import { handleGPTResponse, handleThreadCreation, runGPT } from '../../utils/Util.js';
 
 @Discord()
@@ -24,13 +22,17 @@ export class Ask {
             minLength: 4,
             maxLength: 100,
         })
-            query: string,
-            interaction: CommandInteraction,
-            client: Client,
+        query: string,
+        interaction: CommandInteraction,
+        client: Client
     ) {
         await interaction.deferReply();
 
-        if (process.env.ENABLE_MESSAGE_THREADS === 'true' && interaction.guild && interaction.channel?.type === ChannelType.GuildText) {
+        if (
+            process.env.ENABLE_MESSAGE_THREADS === 'true' &&
+            interaction.guild &&
+            interaction.channel?.type === ChannelType.GuildText
+        ) {
             await handleThreadCreation({
                 source: interaction,
                 client,

@@ -1,5 +1,9 @@
-import { Client, ContextMenu, Discord } from 'discordx';
-import { ApplicationCommandType, codeBlock, MessageContextMenuCommandInteraction } from 'discord.js';
+import {
+    ApplicationCommandType,
+    type MessageContextMenuCommandInteraction,
+    codeBlock,
+} from 'discord.js';
+import { type Client, ContextMenu, Discord } from 'discordx';
 import { runTTS } from '../utils/Util.js';
 
 @Discord()
@@ -14,7 +18,10 @@ export class TextToSpeech {
         name: 'Text to Speech',
         type: ApplicationCommandType.Message,
     })
-    async messageHandler(interaction: MessageContextMenuCommandInteraction, client: Client): Promise<void> {
+    async messageHandler(
+        interaction: MessageContextMenuCommandInteraction,
+        client: Client
+    ): Promise<void> {
         // Check if TTS is disabled via the environment variable.
         if (process.env.ENABLE_TTS !== 'true') {
             await interaction.reply({
@@ -36,7 +43,8 @@ export class TextToSpeech {
         // Check if the message has enough text content to process
         if (!interaction.targetMessage.content || interaction.targetMessage.content.length <= 10) {
             await interaction.reply({
-                content: '⚠️ Message is too short - please select a message with at least 10 characters',
+                content:
+                    '⚠️ Message is too short - please select a message with at least 10 characters',
                 ephemeral: true,
             });
             return;
@@ -55,11 +63,16 @@ export class TextToSpeech {
 
         // If the result is an Error object, notify the user and include details for debugging.
         if (res instanceof Error) {
-            await interaction.editReply({ content: `An error occurred, please report this to a member of our moderation team.\n${codeBlock('ts', `${res}`)}` });
+            await interaction.editReply({
+                content: `An error occurred, please report this to a member of our moderation team.\n${codeBlock('ts', `${res}`)}`,
+            });
             return;
         }
 
         // If successful, send the TTS audio as an attachment, with a link to the original message.
-        await interaction.editReply({ content: `Speech generated from: ${interaction.targetMessage.url}`, files: [res] });
+        await interaction.editReply({
+            content: `Speech generated from: ${interaction.targetMessage.url}`,
+            files: [res],
+        });
     }
 }

@@ -1,7 +1,6 @@
-import type { Client } from 'discordx';
-import { Discord, Slash } from 'discordx';
-import { ChannelType, CommandInteraction, EmbedBuilder } from 'discord.js';
 import { Category } from '@discordx/utilities';
+import { ChannelType, type CommandInteraction, EmbedBuilder } from 'discord.js';
+import { type Client, Discord, Slash } from 'discordx';
 
 @Discord()
 @Category('Miscellaneous')
@@ -13,7 +12,9 @@ export class Ping {
      */
     @Slash({ description: 'Displays bot and API ping.' })
     async ping(interaction: CommandInteraction, client: Client): Promise<void> {
-        if (!interaction.channel || interaction.channel.type !== ChannelType.GuildText) return;
+        if (!interaction.channel || interaction.channel.type !== ChannelType.GuildText) {
+            return;
+        }
 
         const start = Date.now();
         await interaction.deferReply();
@@ -23,8 +24,12 @@ export class Ping {
         const apiLatency = Math.max(0, Math.round(client.ws.ping));
 
         const getLatencyEmoji = (ms: number) => {
-            if (ms < 100) return '🟢';
-            if (ms < 200) return '🟡';
+            if (ms < 100) {
+                return '🟢';
+            }
+            if (ms < 200) {
+                return '🟡';
+            }
             return '🔴';
         };
 
@@ -41,7 +46,7 @@ export class Ping {
                     name: 'API Latency',
                     value: `${getLatencyEmoji(apiLatency)} \`${apiLatency}ms\``,
                     inline: true,
-                },
+                }
             );
 
         await interaction.editReply({ embeds: [embed] });

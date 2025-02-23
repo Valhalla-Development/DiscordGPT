@@ -28,10 +28,7 @@ build/
 # ========================
 
 # Yarn: lock file and error log
-yarn-error.log
-.yarn/
-.pnp.cjs
-.pnp.loader.mjs
+node_modules/
 
 # ========================
 # Database file

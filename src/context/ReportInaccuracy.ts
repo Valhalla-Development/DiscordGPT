@@ -1,21 +1,19 @@
 import {
-    Client, ContextMenu, Discord, ModalComponent,
-} from 'discordx';
-import {
     ActionRowBuilder,
     ApplicationCommandType,
     ChannelType,
-    codeBlock,
-    GuildTextBasedChannel,
-    MessageContextMenuCommandInteraction,
+    type GuildTextBasedChannel,
+    type MessageContextMenuCommandInteraction,
     ModalBuilder,
-    ModalSubmitInteraction,
+    type ModalSubmitInteraction,
     PermissionsBitField,
     TextInputBuilder,
     TextInputStyle,
+    codeBlock,
 } from 'discord.js';
+import { type Client, ContextMenu, Discord, ModalComponent } from 'discordx';
 
-let messageUrl: string = '';
+let messageUrl = '';
 
 @Discord()
 export class ReportInaccuracy {
@@ -28,7 +26,10 @@ export class ReportInaccuracy {
         name: 'Report Inaccuracy',
         type: ApplicationCommandType.Message,
     })
-    async userHandler(interaction: MessageContextMenuCommandInteraction, client: Client): Promise<void> {
+    async userHandler(
+        interaction: MessageContextMenuCommandInteraction,
+        client: Client
+    ): Promise<void> {
         // Check if reporting is enabled for this server
         if (!process.env.REPORT_CHANNEL_ID) {
             await interaction.reply({
@@ -60,9 +61,14 @@ export class ReportInaccuracy {
         }
 
         // Check if the bot has permission to send messages in the channel
-        if (!interaction.guild?.members.me?.permissionsIn(channel).has(PermissionsBitField.Flags.SendMessages)) {
+        if (
+            !interaction.guild?.members.me
+                ?.permissionsIn(channel)
+                .has(PermissionsBitField.Flags.SendMessages)
+        ) {
             await interaction.reply({
-                content: '⚠️ I lack permission to send messages in the configured channel. Please report this to a staff member.',
+                content:
+                    '⚠️ I lack permission to send messages in the configured channel. Please report this to a staff member.',
                 ephemeral: true,
             });
             return;
@@ -96,10 +102,14 @@ export class ReportInaccuracy {
     async handleModalSubmit(interaction: ModalSubmitInteraction): Promise<void> {
         try {
             // Get the report channel
-            const channel = interaction.guild?.channels.cache.get(process.env.REPORT_CHANNEL_ID!) as GuildTextBasedChannel;
+            const channel = interaction.guild?.channels.cache.get(
+                process.env.REPORT_CHANNEL_ID!
+            ) as GuildTextBasedChannel;
 
             // Send the report to the designated channel
-            await channel.send(`Inaccuracy reported by ${interaction.user} *(${messageUrl})*\n\nDescription:\n${codeBlock('text', interaction.fields.getTextInputValue('modalField'))}`);
+            await channel.send(
+                `Inaccuracy reported by ${interaction.user} *(${messageUrl})*\n\nDescription:\n${codeBlock('text', interaction.fields.getTextInputValue('modalField'))}`
+            );
 
             // Acknowledge the user that their report has been submitted
             await interaction.reply({
@@ -107,7 +117,9 @@ export class ReportInaccuracy {
                 ephemeral: true,
             });
         } catch (error) {
-            await interaction.reply({ content: `An error occurred, please report this to a member of our moderation team.\n${codeBlock('ts', `${error}`)}` });
+            await interaction.reply({
+                content: `An error occurred, please report this to a member of our moderation team.\n${codeBlock('ts', `${error}`)}`,
+            });
         }
     }
 }

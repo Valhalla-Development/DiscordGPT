@@ -21,6 +21,7 @@ build/
 
 # JetBrains IDEs (e.g., WebStorm, IntelliJ)
 .idea/
+.vscode/
 
 # ========================
 # Dependency management

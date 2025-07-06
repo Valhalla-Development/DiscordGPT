@@ -149,7 +149,9 @@ export async function loadAssistant(
 
         // Wait for completion
         const waitForCompletion = async (): Promise<void> => {
-            const retrieve = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id });
+            const retrieve = await openai.beta.threads.runs.retrieve(run.id, {
+                thread_id: thread.id,
+            });
 
             console.log(
                 retrieve.status === 'completed'
@@ -758,9 +760,9 @@ export async function handleGPTResponse(
         const content =
             source instanceof Message
                 ? source.content
-                : source.isChatInputCommand() 
-                    ? source.options.getString('query') || ''
-                    : '';
+                : source.isChatInputCommand()
+                  ? source.options.getString('query') || ''
+                  : '';
 
         // Handle boolean response (usually rate limiting)
         if (typeof response === 'boolean') {

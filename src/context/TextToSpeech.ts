@@ -4,6 +4,7 @@ import {
     type MessageContextMenuCommandInteraction,
 } from 'discord.js';
 import { type Client, ContextMenu, Discord } from 'discordx';
+import { config } from '../config/Config.js';
 import { runTTS } from '../utils/Util.js';
 
 @Discord()
@@ -23,7 +24,7 @@ export class TextToSpeech {
         client: Client
     ): Promise<void> {
         // Check if TTS is disabled via the environment variable.
-        if (process.env.ENABLE_TTS !== 'true') {
+        if (!config.ENABLE_TTS) {
             await interaction.reply({
                 content: '⚠️ TTS not enabled - Text to speech is not enabled in this server.',
                 ephemeral: true,

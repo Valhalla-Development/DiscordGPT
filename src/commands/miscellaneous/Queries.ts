@@ -13,6 +13,7 @@ import {
     type User,
 } from 'discord.js';
 import { ButtonComponent, type Client, Discord, Slash, SlashOption } from 'discordx';
+import { config } from '../../config/Config.js';
 import { getGptQueryData, setGptQueryData, type UserData } from '../../utils/Util.js';
 
 @Discord()
@@ -53,9 +54,9 @@ export class Queries {
                 inline: true,
             });
         } else {
-            const remaining = `${Number(process.env.MAX_QUERIES_LIMIT) - Number(getData.queriesRemaining)}/${process.env.MAX_QUERIES_LIMIT}`;
+            const remaining = `${Number(config.MAX_QUERIES_LIMIT) - Number(getData.queriesRemaining)}/${config.MAX_QUERIES_LIMIT}`;
             const resetValue =
-                getData.queriesRemaining === Number(process.env.MAX_QUERIES_LIMIT)
+                getData.queriesRemaining === Number(config.MAX_QUERIES_LIMIT)
                     ? 'N/A'
                     : `<t:${epochTime}>`;
             fields.push(
@@ -135,16 +136,16 @@ export class Queries {
         }
 
         // Staff roles defined in env file.
-        const staffRoles = process.env.STAFF_ROLE_IDS?.split(',');
+        const staffRoles = config.STAFF_ROLE_IDS;
         const isStaff = staffRoles?.some(
-            (roleID) =>
+            (roleID: string) =>
                 interaction.member?.roles instanceof GuildMemberRoleManager &&
                 interaction.member.roles.cache.has(roleID)
         );
 
         // Admins defined in env file.
-        const adminIds = process.env.ADMIN_USER_IDS?.split(',');
-        const isAdmin = adminIds?.some((id) => id === interaction.user.id);
+        const adminIds = config.ADMIN_USER_IDS;
+        const isAdmin = adminIds?.some((id: string) => id === interaction.user.id);
         this.isAdmin = isAdmin;
 
         const getData = await getGptQueryData(userId.id);
@@ -188,7 +189,7 @@ export class Queries {
             return;
         }
 
-        const { MAX_QUERIES_LIMIT } = process.env;
+        const { MAX_QUERIES_LIMIT } = config;
 
         const noData = new EmbedBuilder().setColor('#EC645D').addFields({
             name: `**${client.user?.username} - Query Checker**`,
@@ -263,7 +264,7 @@ export class Queries {
             return;
         }
 
-        const { MAX_QUERIES_LIMIT } = process.env;
+        const { MAX_QUERIES_LIMIT } = config;
 
         const noData = new EmbedBuilder().setColor('#EC645D').addFields({
             name: `**${client.user?.username} - Query Checker**`,
@@ -335,7 +336,7 @@ export class Queries {
             return;
         }
 
-        const { MAX_QUERIES_LIMIT } = process.env;
+        const { MAX_QUERIES_LIMIT } = config;
 
         const noData = new EmbedBuilder().setColor('#EC645D').addFields({
             name: `**${client.user?.username} - Query Checker**`,

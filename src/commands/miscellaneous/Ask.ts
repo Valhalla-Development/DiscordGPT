@@ -1,6 +1,7 @@
 import { Category } from '@discordx/utilities';
 import { ApplicationCommandOptionType, ChannelType, type CommandInteraction } from 'discord.js';
 import { type Client, Discord, Slash, SlashOption } from 'discordx';
+import { config } from '../../config/Config.js';
 import { handleGPTResponse, handleThreadCreation, runGPT } from '../../utils/Util.js';
 
 @Discord()
@@ -29,7 +30,7 @@ export class Ask {
         await interaction.deferReply();
 
         if (
-            process.env.ENABLE_MESSAGE_THREADS === 'true' &&
+            config.ENABLE_MESSAGE_THREADS &&
             interaction.guild &&
             interaction.channel?.type === ChannelType.GuildText
         ) {
@@ -38,7 +39,7 @@ export class Ask {
                 client,
                 user: interaction.user,
                 query,
-                commandUsageChannel: process.env.COMMAND_USAGE_CHANNEL,
+                commandUsageChannel: config.COMMAND_USAGE_CHANNEL,
             });
         } else {
             const response = await runGPT(query, interaction.user);

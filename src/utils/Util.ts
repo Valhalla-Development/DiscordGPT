@@ -20,6 +20,7 @@ import KeyvSqlite from '@keyv/sqlite';
 import Keyv from 'keyv';
 import moment from 'moment';
 import OpenAI from 'openai';
+import { config } from '../config/Config.js';
 
 export interface UserData {
     totalQueries: number;
@@ -98,8 +99,8 @@ export async function loadAssistant(
     }
 
     try {
-        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-        const assistant = await openai.beta.assistants.retrieve(process.env.OPENAI_ASSISTANT_ID!);
+        const openai = new OpenAI({ apiKey: config.OPENAI_API_KEY });
+        const assistant = await openai.beta.assistants.retrieve(config.OPENAI_ASSISTANT_ID!);
 
         // Fetch existing thread or create a new one
         let thread: OpenAI.Beta.Threads.Thread;
@@ -214,7 +215,7 @@ export async function runTTS(str: string, user: User): Promise<AttachmentBuilder
         );
 
         // Initialize OpenAI client
-        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const openai = new OpenAI({ apiKey: config.OPENAI_API_KEY });
 
         // Generate TTS using OpenAI's API
         const tts = await openai.audio.speech.create({
@@ -290,7 +291,7 @@ export async function getGptQueryData(userId: string): Promise<UserData | false>
  */
 export async function checkGptAvailability(userId: string): Promise<string | boolean> {
     // Parse the rate limit from environment variables
-    const MAX_QUERIES_LIMIT = Number(process.env.MAX_QUERIES_LIMIT);
+    const MAX_QUERIES_LIMIT = Number(config.MAX_QUERIES_LIMIT);
 
     // Retrieve user's GPT query data from the database
     const userQueryData = await getGptQueryData(userId);
@@ -425,7 +426,7 @@ export function splitMessages(content: string, length: number): string[] {
  * @returns The processed string.
  */
 export function processString(str: string): string {
-    const embedLinks = process.env.ENABLE_EMBED_LINKS !== 'false';
+    const embedLinks = config.ENABLE_EMBED_LINKS;
 
     return str
         .replace(/【.*?】/g, '')
@@ -498,7 +499,7 @@ export async function handleError(client: Client, error: unknown): Promise<void>
     // Ensure we have a stack trace
     const errorStack = normalizedError.stack || normalizedError.message || String(error);
 
-    if (process.env.ENABLE_LOGGING?.toLowerCase() !== 'true' || !process.env.LOGGING_CHANNEL) {
+    if (!(config.ENABLE_LOGGING && config.ERROR_LOGGING_CHANNEL)) {
         return;
     }
 
@@ -518,12 +519,12 @@ export async function handleError(client: Client, error: unknown): Promise<void>
     }
 
     try {
-        const channel = client.channels.cache.get(process.env.LOGGING_CHANNEL) as
+        const channel = client.channels.cache.get(config.ERROR_LOGGING_CHANNEL!) as
             | TextChannel
             | undefined;
 
         if (!channel || channel.type !== ChannelType.GuildText) {
-            console.error(`Invalid logging channel: ${process.env.LOGGING_CHANNEL}`);
+            console.error(`Invalid logging channel: ${config.ERROR_LOGGING_CHANNEL}`);
             return;
         }
 

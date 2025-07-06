@@ -1,5 +1,6 @@
 import { ChannelType, EmbedBuilder, type Message, type User } from 'discord.js';
 import { type ArgsOf, type Client, Discord, On } from 'discordx';
+import { config } from '../config/Config.js';
 import { handleGPTResponse, handleThreadCreation, runGPT } from '../utils/Util.js';
 
 @Discord()
@@ -15,14 +16,11 @@ export class MessageCreate {
     private readonly supportServerInvite?: string;
 
     constructor() {
-        this.threadsEnabled = process.env.ENABLE_MESSAGE_THREADS === 'true';
-        this.commandUsageChannel = process.env.COMMAND_USAGE_CHANNEL;
-        this.allowedServers =
-            process.env.ALLOWED_SERVER_IDS?.split(',').map((id) => id.trim()) || [];
-        this.excludedChannels = new Set(
-            process.env.EXCLUDED_CHANNEL_IDS?.split(',').map((id) => id.trim()) || []
-        );
-        this.supportServerInvite = process.env.SUPPORT_SERVER_INVITE;
+        this.threadsEnabled = config.ENABLE_MESSAGE_THREADS;
+        this.commandUsageChannel = config.COMMAND_USAGE_CHANNEL;
+        this.allowedServers = config.ALLOWED_SERVER_IDS || [];
+        this.excludedChannels = new Set(config.EXCLUDED_CHANNEL_IDS || []);
+        this.supportServerInvite = config.SUPPORT_SERVER_INVITE;
     }
 
     /**
@@ -81,7 +79,7 @@ export class MessageCreate {
      * Either processes the message or redirects to support server
      */
     private async handleDirectMessage(message: Message, client: Client) {
-        if (process.env.ENABLE_DIRECT_MESSAGES === 'true') {
+        if (config.ENABLE_DIRECT_MESSAGES) {
             await this.handleGPTResponse(message.content, message.author, message, client);
         } else {
             const replyMsg = this.supportServerInvite

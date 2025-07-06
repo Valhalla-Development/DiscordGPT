@@ -7,6 +7,7 @@ import {
     PermissionsBitField,
 } from 'discord.js';
 import { type Client, Discord, Slash } from 'discordx';
+import { config } from '../../config/Config.js';
 import { fetchAllData } from '../../utils/Util.js';
 
 @Discord()
@@ -22,12 +23,21 @@ export class Stats {
      * @param client - The Discord client.
      */
     async stats(interaction: CommandInteraction, client: Client): Promise<void> {
-        // If the user is not staff, filter out the staff command menu
-        const staffRoles = process.env.STAFF_ROLE_IDS?.split(',');
+        // Check if user has the required staff role
+        const staffRoles = config.STAFF_ROLE_IDS;
+        const memberRoles = interaction.member?.roles;
+
+        if (!memberRoles) {
+            await interaction.reply({
+                content: '⚠️ You do not have the required permissions to perform this action.',
+                ephemeral: true,
+            });
+            return;
+        }
+
         const isStaff = staffRoles?.some(
             (roleID) =>
-                interaction.member?.roles instanceof GuildMemberRoleManager &&
-                interaction.member.roles.cache.has(roleID)
+                memberRoles instanceof GuildMemberRoleManager && memberRoles.cache.has(roleID)
         );
 
         if (!isStaff) {

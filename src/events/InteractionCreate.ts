@@ -1,7 +1,8 @@
-import { ChannelType, codeBlock, EmbedBuilder } from 'discord.js';
+import { ChannelType, type CommandInteraction, codeBlock, EmbedBuilder } from 'discord.js';
 import { type ArgsOf, type Client, Discord, On } from 'discordx';
 import moment from 'moment';
 import '@colors/colors';
+import { config } from '../config/Config.js';
 import { reversedRainbow } from '../utils/Util.js';
 
 @Discord()
@@ -12,7 +13,20 @@ export class InteractionCreate {
      * @param client - The Discord client.
      */
     @On({ event: 'interactionCreate' })
-    async onInteraction([interaction]: ArgsOf<'interactionCreate'>, client: Client) {
+    async onInteraction([interaction]: ArgsOf<'interactionCreate'>, client: Client): Promise<void> {
+        try {
+            if (interaction.isCommand()) {
+                await this.handleCommandInteraction(interaction, client);
+            }
+        } catch (error) {
+            console.error('Error handling interaction:', error);
+        }
+    }
+
+    private async handleCommandInteraction(
+        interaction: CommandInteraction,
+        client: Client
+    ): Promise<void> {
         // Check if the interaction is in a guild and in a guild text channel, and is either a string select menu or a chat input command.
         if (
             !(
@@ -29,9 +43,9 @@ export class InteractionCreate {
         }
 
         // Skip processing if the interaction is not in a guild (i.e., it's a DM) and DMs are not enabled
-        if (!interaction.guild && process.env.ENABLE_DIRECT_MESSAGES !== 'true') {
-            const replyMsg = process.env.SUPPORT_SERVER_INVITE
-                ? `[${client.user?.username} Discord server](${process.env.SUPPORT_SERVER_INVITE})`
+        if (!(interaction.guild || config.ENABLE_DIRECT_MESSAGES)) {
+            const replyMsg = config.SUPPORT_SERVER_INVITE
+                ? `[${client.user?.username} Discord server](${config.SUPPORT_SERVER_INVITE})`
                 : `**${client.user?.username} Discord server**`;
 
             const embed = new EmbedBuilder().setColor('#EC645D').addFields([
@@ -46,11 +60,12 @@ export class InteractionCreate {
         }
 
         // Return if guild is not whitelisted
-        const { ALLOWED_SERVER_IDS } = process.env;
+        const { ALLOWED_SERVER_IDS } = config;
+
         if (
             interaction.guild &&
             ALLOWED_SERVER_IDS &&
-            !ALLOWED_SERVER_IDS.split(',').some((item) => item === interaction.guild?.id.toString())
+            !ALLOWED_SERVER_IDS.some((serverId: string) => serverId === interaction.guild?.id)
         ) {
             return;
         }
@@ -66,7 +81,20 @@ export class InteractionCreate {
             return;
         }
 
-        if (process.env.ENABLE_LOGGING?.toLowerCase() === 'true') {
+        if (config.ENABLE_LOGGING) {
+            await this.logCommandUsage(interaction, client);
+        }
+    }
+
+    private async logCommandUsage(interaction: CommandInteraction, client: Client): Promise<void> {
+        try {
+            const channel = client.channels.cache.get(config.COMMAND_LOGGING_CHANNEL!);
+
+            if (!(channel && 'send' in channel)) {
+                console.error(`Invalid command logging channel: ${config.COMMAND_LOGGING_CHANNEL}`);
+                return;
+            }
+
             const reply = await interaction.fetchReply().catch(() => null);
 
             const link =
@@ -119,13 +147,12 @@ export class InteractionCreate {
             // Channel logging
             if (
                 (interaction.isChatInputCommand() || interaction.isContextMenuCommand()) &&
-                process.env.COMMAND_LOGGING_CHANNEL
+                config.COMMAND_LOGGING_CHANNEL
             ) {
-                const channel = client.channels.cache.get(process.env.COMMAND_LOGGING_CHANNEL);
-                if (channel?.type === ChannelType.GuildText) {
-                    channel.send({ embeds: [logEmbed] }).catch(console.error);
-                }
+                channel.send({ embeds: [logEmbed] }).catch(console.error);
             }
+        } catch (error) {
+            console.error('Error logging command usage:', error);
         }
     }
 }

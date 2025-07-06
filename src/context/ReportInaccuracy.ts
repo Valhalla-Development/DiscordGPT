@@ -12,6 +12,7 @@ import {
     TextInputStyle,
 } from 'discord.js';
 import { type Client, ContextMenu, Discord, ModalComponent } from 'discordx';
+import { config } from '../config/Config.js';
 
 let messageUrl = '';
 
@@ -26,30 +27,30 @@ export class ReportInaccuracy {
         name: 'Report Inaccuracy',
         type: ApplicationCommandType.Message,
     })
-    async userHandler(
+    async reportInaccuracy(
         interaction: MessageContextMenuCommandInteraction,
         client: Client
     ): Promise<void> {
-        // Check if reporting is enabled for this server
-        if (!process.env.REPORT_CHANNEL_ID) {
+        // Ensure the selected message was sent by the bot itself
+        if (interaction.targetMessage.author.id !== client.user?.id) {
             await interaction.reply({
-                content: '⚠️ Reporting is not enabled on this server.',
+                content: `⚠️ Invalid target - please only report inaccuracies on messages from ${client.user}`,
                 ephemeral: true,
             });
             return;
         }
 
-        // Ensure the selected message was sent by the bot itself, restricting ReportInaccuracy usage to bot messages.
-        if (interaction.targetMessage.author.id !== client.user?.id) {
+        // Check if the report channel is configured
+        if (!config.REPORT_CHANNEL_ID) {
             await interaction.reply({
-                content: `⚠️ Invalid target - reports can only be made for inaccuracies from ${client.user}`,
+                content: '⚠️ Report functionality is not configured on this server.',
                 ephemeral: true,
             });
             return;
         }
 
         // Get the configured report channel
-        const channel = interaction.guild?.channels.cache.get(process.env.REPORT_CHANNEL_ID);
+        const channel = interaction.guild?.channels.cache.get(config.REPORT_CHANNEL_ID);
 
         // Validate the channel
         if (!channel || channel.type !== ChannelType.GuildText) {
@@ -103,7 +104,7 @@ export class ReportInaccuracy {
         try {
             // Get the report channel
             const channel = interaction.guild?.channels.cache.get(
-                process.env.REPORT_CHANNEL_ID!
+                config.REPORT_CHANNEL_ID!
             ) as GuildTextBasedChannel;
 
             // Send the report to the designated channel

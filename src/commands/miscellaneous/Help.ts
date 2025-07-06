@@ -16,6 +16,7 @@ import {
     SelectMenuComponent,
     Slash,
 } from 'discordx';
+import { config } from '../../config/Config.js';
 import { capitalise, getCommandIds, messageDelete } from '../../utils/Util.js';
 
 @Discord()
@@ -52,9 +53,9 @@ export class Help {
         );
 
         // If the user is not staff, filter out the staff command menu
-        const staffRoles = process.env.STAFF_ROLE_IDS?.split(',');
+        const staffRoles = config.STAFF_ROLE_IDS;
         const isStaff = staffRoles?.some(
-            (roleID) =>
+            (roleID: string) =>
                 interaction.member?.roles instanceof GuildMemberRoleManager &&
                 interaction.member.roles.cache.has(roleID)
         );

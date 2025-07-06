@@ -6,6 +6,7 @@ import {
     PermissionsBitField,
 } from 'discord.js';
 import { Discord, Slash, SlashChoice, SlashOption } from 'discordx';
+import { config } from '../../config/Config.js';
 import { getGptQueryData, setGptQueryData } from '../../utils/Util.js';
 
 @Discord()
@@ -44,8 +45,8 @@ export class Blacklist {
         interaction: CommandInteraction
     ) {
         // Check if command was executed by an admin defined in the environment variable.
-        const adminIds = process.env.ADMIN_USER_IDS?.split(',');
-        const isAdmin = adminIds?.some((id) => id === interaction.user.id);
+        const adminIds = config.ADMIN_USER_IDS;
+        const isAdmin = adminIds?.some((id: string) => id === interaction.user.id);
 
         if (interaction.user.id === user.id && !isAdmin) {
             await interaction.reply({
@@ -55,7 +56,7 @@ export class Blacklist {
             return;
         }
 
-        const { MAX_QUERIES_LIMIT } = process.env;
+        const { MAX_QUERIES_LIMIT } = config;
 
         // Fetch the user's data
         const getDb = await getGptQueryData(user.id);

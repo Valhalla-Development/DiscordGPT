@@ -82,47 +82,6 @@ client.on('error', async (error: unknown) => {
  * @throws An Error if any required environment variables are missing or invalid.
  */
 async function run() {
-    const missingVar = (v: string) => `The ${v} environment variable is missing.`;
-    const invalidBool = (v: string) => `${v} must be "true" or "false".`;
-
-    const required = [
-        'BOT_TOKEN',
-        'OPENAI_API_KEY',
-        'OPENAI_ASSISTANT_ID',
-        'MAX_QUERIES_LIMIT',
-        'ADMIN_USER_IDS',
-        'STAFF_ROLE_IDS',
-    ];
-    const booleans = [
-        'ENABLE_DIRECT_MESSAGES',
-        'ENABLE_LOGGING',
-        'ENABLE_EMBED_LINKS',
-        'ENABLE_TTS',
-        'ENABLE_MESSAGE_THREADS',
-    ];
-
-    for (const v of required) {
-        if (!process.env[v]) {
-            throw new Error(missingVar(v));
-        }
-    }
-
-    for (const v of booleans) {
-        if (process.env[v] !== 'true' && process.env[v] !== 'false') {
-            throw new Error(invalidBool(v));
-        }
-    }
-
-    if (
-        process.env.ENABLE_LOGGING === 'true' &&
-        !process.env.ERROR_LOGGING_CHANNEL &&
-        !process.env.COMMAND_LOGGING_CHANNEL
-    ) {
-        throw new Error(
-            'ERROR_LOGGING_CHANNEL and COMMAND_LOGGING_CHANNEL are required when logging is enabled.'
-        );
-    }
-
     /**
      * Delays the execution of the function for a specified time in milliseconds.
      * @param ms - The time in milliseconds to delay the execution of the function.
@@ -146,7 +105,7 @@ async function run() {
                 client.cluster = new ClusterClient(client);
                 await sleep(time);
             }
-            await client.login(process.env.BOT_TOKEN as string);
+            await client.login(config.BOT_TOKEN);
         } catch (error) {
             console.error('An error occurred while initializing the bot:', error);
         }

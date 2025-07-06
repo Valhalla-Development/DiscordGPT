@@ -149,7 +149,7 @@ export async function loadAssistant(
 
         // Wait for completion
         const waitForCompletion = async (): Promise<void> => {
-            const retrieve = await openai.beta.threads.runs.retrieve(thread.id, run.id);
+            const retrieve = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id });
 
             console.log(
                 retrieve.status === 'completed'
@@ -278,7 +278,7 @@ export async function setGptQueryData(
  */
 export async function getGptQueryData(userId: string): Promise<UserData | false> {
     const data = (await keyv.get(userId)) as UserData | null;
-    return data;
+    return data ? data : false;
 }
 
 /**
@@ -758,7 +758,9 @@ export async function handleGPTResponse(
         const content =
             source instanceof Message
                 ? source.content
-                : (source.options.get('query')?.value as string) || '';
+                : source.isChatInputCommand() 
+                    ? source.options.getString('query') || ''
+                    : '';
 
         // Handle boolean response (usually rate limiting)
         if (typeof response === 'boolean') {

@@ -260,7 +260,6 @@ export class Help {
      */
     @SelectMenuComponent({ id: 'helpSelect' })
     async handle(interaction: StringSelectMenuInteraction, client: Client): Promise<void> {
-        console.log('helpSelect');
         const selectMenu = this.createSelectMenu();
         await handleSelectMenu(interaction, client, selectMenu);
     }

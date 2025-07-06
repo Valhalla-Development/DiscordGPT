@@ -597,7 +597,7 @@ export async function handleThreadCreation(context: ThreadContext): Promise<bool
     try {
         const activeThreads = await guild?.channels.fetchActiveThreads();
         const existingThread = Array.from(activeThreads?.threads.values() ?? []).find(
-            (thread) => thread.name === threadName && !thread.archived && !thread.locked
+            (th) => th.name === threadName && !th.archived && !th.locked
         );
 
         if (existingThread) {

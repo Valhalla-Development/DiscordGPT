@@ -2,6 +2,7 @@ import {
     ApplicationCommandType,
     codeBlock,
     type MessageContextMenuCommandInteraction,
+    MessageFlags,
 } from 'discord.js';
 import { type Client, ContextMenu, Discord } from 'discordx';
 import { config } from '../config/Config.js';
@@ -27,7 +28,7 @@ export class TextToSpeech {
         if (!config.ENABLE_TTS) {
             await interaction.reply({
                 content: '⚠️ TTS not enabled - Text to speech is not enabled in this server.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
@@ -36,7 +37,7 @@ export class TextToSpeech {
         if (interaction.targetMessage.author.id !== client.user?.id) {
             await interaction.reply({
                 content: `⚠️ Invalid target - please only use text to speech on messages from ${client.user}`,
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
@@ -46,7 +47,7 @@ export class TextToSpeech {
             await interaction.reply({
                 content:
                     '⚠️ Message is too short - please select a message with at least 10 characters',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }

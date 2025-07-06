@@ -4,6 +4,7 @@ import {
     codeBlock,
     EmbedBuilder,
     GuildMemberRoleManager,
+    MessageFlags,
     PermissionsBitField,
 } from 'discord.js';
 import { type Client, Discord, Slash } from 'discordx';
@@ -30,7 +31,7 @@ export class Stats {
         if (!memberRoles) {
             await interaction.reply({
                 content: '⚠️ You do not have the required permissions to perform this action.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
@@ -43,7 +44,7 @@ export class Stats {
         if (!isStaff) {
             await interaction.reply({
                 content: '⚠️ Only a member of staff can perform this action.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
@@ -53,7 +54,7 @@ export class Stats {
         if (allData instanceof Error) {
             await interaction.reply({
                 content: `An error occurred.\n${codeBlock('ts', `${allData}`)}`,
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
@@ -86,7 +87,10 @@ export class Stats {
         const queries = queriesArray.join('\n');
 
         if (!(userNames && queries)) {
-            await interaction.reply({ content: 'No data was found.', ephemeral: true });
+            await interaction.reply({
+                content: 'No data was found.',
+                flags: MessageFlags.Ephemeral,
+            });
             return;
         }
 

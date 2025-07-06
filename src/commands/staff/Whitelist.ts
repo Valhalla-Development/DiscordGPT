@@ -3,6 +3,7 @@ import {
     ApplicationCommandOptionType,
     type CommandInteraction,
     type GuildMember,
+    MessageFlags,
     PermissionsBitField,
 } from 'discord.js';
 import { Discord, Slash, SlashChoice, SlashOption } from 'discordx';
@@ -51,7 +52,7 @@ export class Whitelist {
         if (interaction.user.id === user.id && !isAdmin) {
             await interaction.reply({
                 content: "⚠️ You can't perform this action on yourself",
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
@@ -64,7 +65,7 @@ export class Whitelist {
         if ((option === 'add' || option === 'remove') && !isAdmin) {
             await interaction.reply({
                 content: '⚠️ Access Denied - This command is restricted to administrators only.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
@@ -75,7 +76,7 @@ export class Whitelist {
             if (getDb && getDb.whitelisted) {
                 await interaction.reply({
                     content: '⚠️ User Already Whitelisted.',
-                    ephemeral: true,
+                    flags: MessageFlags.Ephemeral,
                 });
                 return;
             }
@@ -93,7 +94,7 @@ export class Whitelist {
             await interaction.reply({
                 content:
                     '✅ User Whitelisted - The user has been successfully added to the whitelist.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
         }
 
@@ -101,7 +102,10 @@ export class Whitelist {
         if (option === 'remove') {
             // User is not whitelisted.
             if (!(getDb && getDb.whitelisted)) {
-                await interaction.reply({ content: '⚠️ User is not Whitelisted.', ephemeral: true });
+                await interaction.reply({
+                    content: '⚠️ User is not Whitelisted.',
+                    flags: MessageFlags.Ephemeral,
+                });
                 return;
             }
 
@@ -118,7 +122,7 @@ export class Whitelist {
             await interaction.reply({
                 content:
                     '✅ User Removed - The user has been successfully removed from the whitelist.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
         }
 
@@ -126,9 +130,15 @@ export class Whitelist {
         if (option === 'check') {
             // User is not whitelisted.
             if (getDb && getDb.whitelisted) {
-                await interaction.reply({ content: '✅️ User is Whitelisted.', ephemeral: true });
+                await interaction.reply({
+                    content: '✅️ User is Whitelisted.',
+                    flags: MessageFlags.Ephemeral,
+                });
             } else {
-                await interaction.reply({ content: '⚠️ User is not Whitelisted.', ephemeral: true });
+                await interaction.reply({
+                    content: '⚠️ User is not Whitelisted.',
+                    flags: MessageFlags.Ephemeral,
+                });
             }
         }
     }

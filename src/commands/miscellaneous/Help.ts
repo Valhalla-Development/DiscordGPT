@@ -4,6 +4,7 @@ import {
     type CommandInteraction,
     EmbedBuilder,
     GuildMemberRoleManager,
+    MessageFlags,
     type SelectMenuComponentOptionData,
     StringSelectMenuBuilder,
     type StringSelectMenuInteraction,
@@ -118,7 +119,7 @@ export class Help {
             });
 
             // Reply with an ephemeral message indicating the error
-            await interaction.reply({ ephemeral: true, embeds: [wrongUserMessage] });
+            await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [wrongUserMessage] });
             return;
         }
 

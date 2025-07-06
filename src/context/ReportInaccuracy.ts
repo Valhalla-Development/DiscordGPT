@@ -5,6 +5,7 @@ import {
     codeBlock,
     type GuildTextBasedChannel,
     type MessageContextMenuCommandInteraction,
+    MessageFlags,
     ModalBuilder,
     type ModalSubmitInteraction,
     PermissionsBitField,
@@ -35,7 +36,7 @@ export class ReportInaccuracy {
         if (interaction.targetMessage.author.id !== client.user?.id) {
             await interaction.reply({
                 content: `⚠️ Invalid target - please only report inaccuracies on messages from ${client.user}`,
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
@@ -44,7 +45,7 @@ export class ReportInaccuracy {
         if (!config.REPORT_CHANNEL_ID) {
             await interaction.reply({
                 content: '⚠️ Report functionality is not configured on this server.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
@@ -56,7 +57,7 @@ export class ReportInaccuracy {
         if (!channel || channel.type !== ChannelType.GuildText) {
             await interaction.reply({
                 content: '⚠️ Invalid channel configuration. Please report this to a staff member.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
@@ -70,7 +71,7 @@ export class ReportInaccuracy {
             await interaction.reply({
                 content:
                     '⚠️ I lack permission to send messages in the configured channel. Please report this to a staff member.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
@@ -115,7 +116,7 @@ export class ReportInaccuracy {
             // Acknowledge the user that their report has been submitted
             await interaction.reply({
                 content: '✅ Thank you! Your report has been submitted.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
         } catch (error) {
             await interaction.reply({

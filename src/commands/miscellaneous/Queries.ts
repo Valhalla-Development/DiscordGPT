@@ -10,6 +10,7 @@ import {
     type EmbedField,
     GuildMemberRoleManager,
     type InteractionResponse,
+    MessageFlags,
     type User,
 } from 'discord.js';
 import { ButtonComponent, type Client, Discord, Slash, SlashOption } from 'discordx';
@@ -131,7 +132,10 @@ export class Queries {
         const user = await client.users.fetch(targetUser?.id || interaction.user.id);
 
         if (!user) {
-            await interaction.reply({ content: '⚠️ Error fetching member.', ephemeral: true });
+            await interaction.reply({
+                content: '⚠️ Error fetching member.',
+                flags: MessageFlags.Ephemeral,
+            });
             return;
         }
 
@@ -155,7 +159,7 @@ export class Queries {
         if (!getData) {
             await interaction.reply({
                 content: `⚠️ No data available for ${user}.`,
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
@@ -185,7 +189,7 @@ export class Queries {
             });
 
             // Reply with an ephemeral message indicating the error
-            await interaction.reply({ ephemeral: true, embeds: [wrongUserMessage] });
+            await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [wrongUserMessage] });
             return;
         }
 
@@ -197,13 +201,13 @@ export class Queries {
         });
 
         if (!user) {
-            return interaction.reply({ ephemeral: true, embeds: [noData] });
+            return interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [noData] });
         }
 
         const db = await getGptQueryData(user.id);
 
         if (!db) {
-            return interaction.reply({ ephemeral: true, embeds: [noData] });
+            return interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [noData] });
         }
 
         if (db.blacklisted || db.whitelisted) {
@@ -212,12 +216,12 @@ export class Queries {
                 value: `**◎ Error:** ${user} is ${db.whitelisted ? 'whitelisted.' : 'blacklisted.'}`,
             });
 
-            await interaction.reply({ ephemeral: true, embeds: [embed] });
+            await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [embed] });
             return;
         }
 
         if (db.queriesRemaining === Number(MAX_QUERIES_LIMIT)) {
-            return interaction.reply({ ephemeral: true, embeds: [noData] });
+            return interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [noData] });
         }
 
         // Reset cooldown
@@ -260,7 +264,7 @@ export class Queries {
             });
 
             // Reply with an ephemeral message indicating the error
-            await interaction.reply({ ephemeral: true, embeds: [wrongUserMessage] });
+            await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [wrongUserMessage] });
             return;
         }
 
@@ -272,7 +276,7 @@ export class Queries {
         });
 
         if (!user) {
-            return interaction.reply({ ephemeral: true, embeds: [noData] });
+            return interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [noData] });
         }
 
         const db = await getGptQueryData(user.id);
@@ -332,7 +336,7 @@ export class Queries {
             });
 
             // Reply with an ephemeral message indicating the error
-            await interaction.reply({ ephemeral: true, embeds: [wrongUserMessage] });
+            await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [wrongUserMessage] });
             return;
         }
 
@@ -344,7 +348,7 @@ export class Queries {
         });
 
         if (!user) {
-            return interaction.reply({ ephemeral: true, embeds: [noData] });
+            return interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [noData] });
         }
 
         const db = await getGptQueryData(user.id);
@@ -404,7 +408,7 @@ export class Queries {
             });
 
             // Reply with an ephemeral message indicating the error
-            await interaction.reply({ ephemeral: true, embeds: [wrongUserMessage] });
+            await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [wrongUserMessage] });
             return;
         }
 
@@ -414,13 +418,13 @@ export class Queries {
         });
 
         if (!user) {
-            return interaction.reply({ ephemeral: true, embeds: [noData] });
+            return interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [noData] });
         }
 
         const db = await getGptQueryData(user.id);
 
         if (!db) {
-            return interaction.reply({ ephemeral: true, embeds: [noData] });
+            return interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [noData] });
         }
 
         // Delete thread id

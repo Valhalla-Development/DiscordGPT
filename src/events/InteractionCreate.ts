@@ -131,7 +131,7 @@ export class InteractionCreate {
                 console.log(
                     `${'◆◆◆◆◆◆'.rainbow.bold} ${moment(now).format('MMM D, h:mm A')} ${reversedRainbow('◆◆◆◆◆◆')}\n` +
                         `${'🔧 Command:'.brightBlue.bold} ${executedCommand.brightYellow.bold}\n` +
-                        `${'🔍 Executor:'.brightBlue.bold} ${interaction.user.displayName.underline.brightMagenta.bold} ${'('.gray.bold}${'Guild: '.brightBlue.bold}${interaction.guild.name.underline.brightMagenta.bold}${')'}`
+                        `${'🔍 Executor:'.brightBlue.bold} ${interaction.user.displayName.underline.brightMagenta.bold} ${'('.gray.bold}${'Guild: '.brightBlue.bold}${interaction.guild?.name.underline.brightMagenta.bold}${')'}`
                 );
             }
 
@@ -140,7 +140,7 @@ export class InteractionCreate {
                 console.log(
                     `${'◆◆◆◆◆◆'.rainbow.bold} ${moment(now).format('MMM D, h:mm A')} ${reversedRainbow('◆◆◆◆◆◆')}\n` +
                         `${'🔧 Context Menu:'.brightBlue.bold} ${executedCommand.brightYellow.bold}\n` +
-                        `${'🔍 Executor:'.brightBlue.bold} ${interaction.user.displayName.underline.brightMagenta.bold} ${'('.gray.bold}${'Guild: '.brightBlue.bold}${interaction.guild.name.underline.brightMagenta.bold}${')'}`
+                        `${'🔍 Executor:'.brightBlue.bold} ${interaction.user.displayName.underline.brightMagenta.bold} ${'('.gray.bold}${'Guild: '.brightBlue.bold}${interaction.guild?.name.underline.brightMagenta.bold}${')'}`
                 );
             }
 

@@ -3,6 +3,7 @@ import {
     ApplicationCommandOptionType,
     type CommandInteraction,
     type GuildMember,
+    MessageFlags,
     PermissionsBitField,
 } from 'discord.js';
 import { Discord, Slash, SlashChoice, SlashOption } from 'discordx';
@@ -51,7 +52,7 @@ export class Blacklist {
         if (interaction.user.id === user.id && !isAdmin) {
             await interaction.reply({
                 content: "⚠️ You can't perform this action on yourself",
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
@@ -64,7 +65,7 @@ export class Blacklist {
         if ((option === 'add' || option === 'remove') && !isAdmin) {
             await interaction.reply({
                 content: '⚠️ Access Denied - This command is restricted to administrators only.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
@@ -75,7 +76,7 @@ export class Blacklist {
             if (getDb && getDb.blacklisted) {
                 await interaction.reply({
                     content: '⚠️ User Already blacklisted.',
-                    ephemeral: true,
+                    flags: MessageFlags.Ephemeral,
                 });
                 return;
             }
@@ -93,7 +94,7 @@ export class Blacklist {
             await interaction.reply({
                 content:
                     '✅ User Blacklisted - The user has been successfully added to the blacklist.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
         }
 
@@ -101,7 +102,10 @@ export class Blacklist {
         if (option === 'remove') {
             // User is not blacklisted.
             if (!(getDb && getDb.blacklisted)) {
-                await interaction.reply({ content: '⚠️ User is not Blacklisted.', ephemeral: true });
+                await interaction.reply({
+                    content: '⚠️ User is not Blacklisted.',
+                    flags: MessageFlags.Ephemeral,
+                });
                 return;
             }
 
@@ -118,7 +122,7 @@ export class Blacklist {
             await interaction.reply({
                 content:
                     '✅ User Removed - The user has been successfully removed from the blacklist.',
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
         }
 
@@ -126,9 +130,15 @@ export class Blacklist {
         if (option === 'check') {
             // User is not blacklisted.
             if (getDb && getDb.blacklisted) {
-                await interaction.reply({ content: '✅️ User is Blacklisted.', ephemeral: true });
+                await interaction.reply({
+                    content: '✅️ User is Blacklisted.',
+                    flags: MessageFlags.Ephemeral,
+                });
             } else {
-                await interaction.reply({ content: '⚠️ User is not Blacklisted.', ephemeral: true });
+                await interaction.reply({
+                    content: '⚠️ User is not Blacklisted.',
+                    flags: MessageFlags.Ephemeral,
+                });
             }
         }
     }

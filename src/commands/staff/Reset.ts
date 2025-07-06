@@ -3,6 +3,7 @@ import {
     ApplicationCommandOptionType,
     type CommandInteraction,
     type GuildMember,
+    MessageFlags,
     PermissionsBitField,
 } from 'discord.js';
 import { Discord, Slash, SlashOption } from 'discordx';
@@ -40,7 +41,7 @@ export class Reset {
         if (interaction.user.id === user.id && !isAdmin) {
             await interaction.reply({
                 content: "⚠️ You can't perform this action on yourself",
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
             });
             return;
         }
@@ -53,7 +54,7 @@ export class Reset {
         // User has no data saved
         if (!db) {
             return interaction.reply({
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
                 content: `⚠️ ${user} has no available data to reset.`,
             });
         }
@@ -61,7 +62,7 @@ export class Reset {
         // User is either whitelisted or blacklisted
         if (db.blacklisted || db.whitelisted) {
             await interaction.reply({
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
                 content: `⚠️ ${user} is ${db.whitelisted ? 'whitelisted.' : 'blacklisted.'}`,
             });
             return;
@@ -70,7 +71,7 @@ export class Reset {
         // User has data, but has not used any queries.
         if (db.queriesRemaining === Number(MAX_QUERIES_LIMIT)) {
             return interaction.reply({
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
                 content: `⚠️ ${user} has not used any available queries.`,
             });
         }
@@ -87,7 +88,7 @@ export class Reset {
         );
 
         await interaction.reply({
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
             content: `${user} has had their usages reset.`,
         });
     }

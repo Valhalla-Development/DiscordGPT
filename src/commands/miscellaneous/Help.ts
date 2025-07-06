@@ -1,13 +1,13 @@
 import { Category, type ICategory } from '@discordx/utilities';
 import {
-    ActionRowBuilder,
     type CommandInteraction,
-    EmbedBuilder,
-    GuildMemberRoleManager,
+    ContainerBuilder,
     MessageFlags,
     type SelectMenuComponentOptionData,
+    SeparatorSpacingSize,
     StringSelectMenuBuilder,
     type StringSelectMenuInteraction,
+    TextDisplayBuilder,
 } from 'discord.js';
 import type { Client } from 'discordx';
 import {
@@ -17,158 +17,251 @@ import {
     SelectMenuComponent,
     Slash,
 } from 'discordx';
-import { config } from '../../config/Config.js';
 import { capitalise, getCommandIds, messageDelete } from '../../utils/Util.js';
+
+// Map categories to their emojis
+const categoryEmojis: Record<string, string> = {
+    miscellaneous: '🔧',
+    staff: '👨‍🎨',
+};
+
+/**
+ * Get the emoji for a category, defaults to wrench
+ */
+function getCategoryEmoji(category: string): string {
+    return categoryEmojis[category.toLowerCase()] || '🔧';
+}
+
+/**
+ * Pull all unique categories from registered commands and format them
+ */
+function getCategoriesAsOptions(): SelectMenuComponentOptionData[] {
+    const uniqueCategories = Array.from(
+        new Set(
+            MetadataStorage.instance.applicationCommands
+                .filter((cmd: DApplicationCommand & ICategory) => cmd.category)
+                .map((cmd: DApplicationCommand & ICategory) => cmd.category as string)
+        )
+    );
+
+    return uniqueCategories.map((cat) => ({
+        label: `${getCategoryEmoji(cat)} ${cat}`,
+        value: `help-${cat.toLowerCase()}`,
+    }));
+}
+
+/**
+ * Build the formatted command list for a specific category
+ */
+async function buildCommandsList(category: string, client: Client): Promise<string> {
+    // Filter commands by category, excluding the help command itself
+    const filteredCommands = MetadataStorage.instance.applicationCommands.filter(
+        (cmd: DApplicationCommand & ICategory) =>
+            cmd.category?.toLowerCase() === category.toLowerCase() &&
+            cmd.name?.toLowerCase() !== 'help'
+    );
+
+    const commandIds = await getCommandIds(client);
+    return filteredCommands
+        .map((cmd) => {
+            const commandId = commandIds[cmd.name];
+            // Use Discord's command mention format if we have the ID, otherwise just capitalize
+            const commandMention = commandId ? `</${cmd.name}:${commandId}>` : capitalise(cmd.name);
+            return `> 🔹 **${commandMention}**\n> \u200b \u200b \u200b *${cmd.description}*`;
+        })
+        .join('\n');
+}
+
+/**
+ * The main container builder - handles all three display modes based on what options are passed
+ */
+async function buildHelpContainer(
+    client: Client,
+    options: {
+        category?: string;
+        selectMenu?: StringSelectMenuBuilder;
+        showCategorySelector?: boolean;
+    } = {}
+): Promise<ContainerBuilder> {
+    const { category, selectMenu, showCategorySelector } = options;
+
+    // Every help view starts with this header
+    const headerText = new TextDisplayBuilder().setContent(
+        [
+            `# 🚀 **${client.user?.username} Command Center**`,
+            `> 👋 **Welcome to ${client.user?.username}'s command hub!**`,
+        ].join('\n')
+    );
+
+    const container = new ContainerBuilder()
+        .addTextDisplayComponents(headerText)
+        .addSeparatorComponents((separator) => separator.setSpacing(SeparatorSpacingSize.Large));
+
+    if (showCategorySelector) {
+        // Initial view - show category picker
+        const selectText = new TextDisplayBuilder().setContent(
+            [
+                '## 📂 **Command Categories**',
+                '',
+                '> **Choose a category below to explore available commands**',
+                '> Each category contains specialized commands for different features',
+            ].join('\n')
+        );
+
+        container
+            .addTextDisplayComponents(selectText)
+            .addActionRowComponents((row) => row.addComponents(selectMenu!));
+    } else if (category) {
+        // Category view - show commands for the selected category
+        const commandsList = await buildCommandsList(category, client);
+        const commandsText = new TextDisplayBuilder().setContent(
+            [
+                `## ${getCategoryEmoji(category)} **${capitalise(category)} Commands**`,
+                '',
+                commandsList,
+                '',
+            ].join('\n')
+        );
+
+        container.addTextDisplayComponents(commandsText);
+
+        // Add the dropdown back so users can switch categories
+        if (selectMenu) {
+            container
+                .addSeparatorComponents((separator) =>
+                    separator.setSpacing(SeparatorSpacingSize.Small)
+                )
+                .addActionRowComponents((row) => row.addComponents(selectMenu));
+        }
+    }
+
+    return container;
+}
+
+/**
+ * Handle the initial /help command
+ */
+async function handleHelp(
+    interaction: CommandInteraction,
+    client: Client,
+    selectMenu: StringSelectMenuBuilder
+) {
+    const cats = getCategoriesAsOptions();
+
+    if (cats.length <= 1) {
+        // Single category or no categories
+        if (cats.length === 0) {
+            return;
+        }
+
+        const selectedCategory = cats[0]!.value.replace(/^help-/, '').toLowerCase();
+        const container = await buildHelpContainer(client, { category: selectedCategory });
+
+        await interaction.reply({
+            components: [container],
+            flags: MessageFlags.IsComponentsV2,
+        });
+    } else {
+        // Multiple categories
+        const container = await buildHelpContainer(client, {
+            selectMenu,
+            showCategorySelector: true,
+        });
+
+        await interaction.reply({
+            components: [container],
+            flags: MessageFlags.IsComponentsV2,
+        });
+    }
+}
+
+/**
+ * Handle when someone picks a category from the dropdown
+ */
+async function handleSelectMenu(
+    interaction: StringSelectMenuInteraction,
+    client: Client,
+    selectMenu: StringSelectMenuBuilder
+) {
+    // Only let the person who ran the command use the dropdown
+    if (interaction.user.id !== interaction.message.interaction?.user.id) {
+        const errorText = new TextDisplayBuilder().setContent(
+            [
+                '## ⛔ **Access Denied**',
+                '',
+                `> **${client.user?.username} - ${capitalise(interaction.message.interaction?.commandName ?? '')}**`,
+                '> 🚫 **Error:** Only the command executor can interact with this menu!',
+                '',
+                '*Run the command yourself to access the help menu*',
+            ].join('\n')
+        );
+
+        const errorContainer = new ContainerBuilder().addTextDisplayComponents(errorText);
+        await interaction.reply({
+            ephemeral: true,
+            components: [errorContainer],
+            flags: MessageFlags.IsComponentsV2,
+        });
+        return;
+    }
+
+    const selectedValue = interaction.values?.[0];
+    if (!selectedValue) {
+        return messageDelete(interaction.message, 0);
+    }
+
+    // Extract the category name from the dropdown value
+    const selectedCategory = selectedValue.replace(/^help-/, '').toLowerCase();
+    const container = await buildHelpContainer(client, {
+        category: selectedCategory,
+        selectMenu,
+    });
+
+    await interaction.update({
+        components: [container],
+        flags: MessageFlags.IsComponentsV2,
+    });
+}
 
 @Discord()
 @Category('Miscellaneous')
 export class Help {
-    /**
-     * Slash command to display a list of commands.
-     * @param interaction - The command interaction.
-     * @param client - The Discord client.
-     */
-    @Slash({ description: 'Display list of commands.' })
-    async help(interaction: CommandInteraction, client: Client) {
-        // Create the initial embed for the message
-        const embed = new EmbedBuilder()
-            .setColor('#EC645D')
-            .setDescription(`Hey, I'm **__${client.user?.username}__**`)
-            .setAuthor({
-                name: `${client.user?.username} Help`,
-                iconURL: `${interaction.guild ? interaction.guild?.iconURL() : client.user?.avatarURL()}`,
-            })
-            .setThumbnail(`${client.user?.displayAvatarURL()}`)
-            .setFooter({
-                text: `Bot Version ${process.env.npm_package_version}`,
-                iconURL: `${client.user?.avatarURL()}`,
-            });
-
-        // Fetch unique command categories
-        let uniqueCategories = Array.from(
-            new Set(
-                MetadataStorage.instance.applicationCommands
-                    .filter((cmd: DApplicationCommand & ICategory) => cmd.category)
-                    .map((cmd: DApplicationCommand & ICategory) => cmd.category as string)
-            )
-        );
-
-        // If the user is not staff, filter out the staff command menu
-        const staffRoles = config.STAFF_ROLE_IDS;
-        const isStaff = staffRoles?.some(
-            (roleID: string) =>
-                interaction.member?.roles instanceof GuildMemberRoleManager &&
-                interaction.member.roles.cache.has(roleID)
-        );
-        if (!isStaff) {
-            uniqueCategories = uniqueCategories.filter((item) => item !== 'Staff');
-        }
-
-        // Create options from the select menu
-        const cats: SelectMenuComponentOptionData[] = uniqueCategories.map((cat) => ({
-            label: cat,
-            value: `help-${cat.toLowerCase()}`,
-        }));
-
-        if (cats.length <= 1) {
-            // If there's only one category, fetch and display commands from that category
-            const selectedCategory = cats[0].value.replace(/^help-/, '').toLowerCase();
-            const filteredCommands = MetadataStorage.instance.applicationCommands.filter(
-                (cmd: DApplicationCommand & ICategory) =>
-                    cmd.category?.toLowerCase() === selectedCategory &&
-                    cmd.name?.toLowerCase() !== 'help'
-            );
-            const commandIds = await getCommandIds(client);
-            for (const cmd of filteredCommands) {
-                const commandId = commandIds[cmd.name];
-                const commandMention = commandId
-                    ? `</${cmd.name}:${commandId}>`
-                    : capitalise(cmd.name);
-                embed.addFields({
-                    name: `● ${commandMention}`,
-                    value: `\u200b \u200b \u200b ○ ${cmd.description}`,
-                });
-            }
-
-            // Send the initial message without the select menu
-            await interaction.reply({ embeds: [embed] });
-        } else {
-            // Create the select menu and send the initial message with it
-            const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-                new StringSelectMenuBuilder()
-                    .setCustomId('helpSelect')
-                    .setPlaceholder('Nothing selected')
-                    .addOptions(...cats)
-            );
-            await interaction.reply({ embeds: [embed], components: [row] });
-        }
+    constructor() {
+        // Bind methods
+        this.help = this.help.bind(this);
+        this.handle = this.handle.bind(this);
     }
 
     /**
-     * Select menu component handler to display commands of a specific category.
-     * @param interaction - The select menu interaction.
-     * @param client - The Discord client.
+     * Create the dropdown menu with current categories (MetadataStorage is empty during constructor)
      */
-    @SelectMenuComponent({ id: 'helpSelect' })
-    async handle(interaction: StringSelectMenuInteraction, client: Client): Promise<void> {
-        // Check if the user interacting with the select menu is the command executor
-        if (interaction.user.id !== interaction.message.interaction?.user.id) {
-            const wrongUserMessage = new EmbedBuilder().setColor('#EC645D').addFields({
-                name: `**${client.user?.username} - ${capitalise(interaction.message.interaction?.commandName ?? '')}**`,
-                value: '**◎ Error:** Only the command executor can select an option!',
-            });
+    private createSelectMenu(): StringSelectMenuBuilder {
+        return new StringSelectMenuBuilder()
+            .setCustomId('helpSelect')
+            .setPlaceholder('🎯 Choose a command category...')
+            .addOptions(...getCategoriesAsOptions());
+    }
 
-            // Reply with an ephemeral message indicating the error
-            await interaction.reply({ flags: MessageFlags.Ephemeral, embeds: [wrongUserMessage] });
+    /**
+     * Main help command - shows either category picker or single category commands
+     */
+    @Slash({ description: 'Display list of commands.' })
+    async help(interaction: CommandInteraction, client: Client) {
+        if (!interaction.channel) {
             return;
         }
 
-        // Retrieve the selected value from the select menu
-        const selectedValue = interaction.values?.[0];
+        const selectMenu = this.createSelectMenu();
+        await handleHelp(interaction, client, selectMenu);
+    }
 
-        // Return if no value is selected
-        if (!selectedValue) {
-            return messageDelete(interaction.message, 0);
-        }
-
-        // Extract the category from the selected value
-        const selectedCategory = selectedValue.replace(/^help-/, '').toLowerCase();
-
-        // Filter application commands based on the selected category
-        const filteredCommands = MetadataStorage.instance.applicationCommands.filter(
-            (cmd: DApplicationCommand & ICategory) =>
-                cmd.category?.toLowerCase() === selectedCategory &&
-                cmd.name?.toLowerCase() !== 'help'
-        );
-
-        // Retrieve command IDs for mentions
-        const commandIds = await getCommandIds(client);
-
-        // Create an embed to display the selected category's commands
-        const embed = new EmbedBuilder()
-            .setColor('#EC645D')
-            .setDescription(`Hey, I'm **__${client.user?.username}__**`)
-            .setAuthor({
-                name: `${client.user?.username} Help`,
-                iconURL: `${interaction.guild?.iconURL()}`,
-            })
-            .setThumbnail(`${client.user?.displayAvatarURL()}`)
-            .setFooter({
-                text: `Bot Version ${process.env.npm_package_version}`,
-                iconURL: `${client.user?.avatarURL()}`,
-            });
-
-        // Add fields for each command in the selected category
-        for (const cmd of filteredCommands) {
-            const commandId = commandIds[cmd.name];
-            const commandMention = commandId ? `</${cmd.name}:${commandId}>` : capitalise(cmd.name);
-            embed.addFields({
-                name: `● ${commandMention}`,
-                value: `\u200b \u200b \u200b ○ ${cmd.description}`,
-            });
-        }
-
-        // Update the interaction with the embed containing category-specific commands
-        await interaction.update({ embeds: [embed] });
+    /**
+     * Handles category selection from the dropdown
+     */
+    @SelectMenuComponent({ id: 'helpSelect' })
+    async handle(interaction: StringSelectMenuInteraction, client: Client): Promise<void> {
+        console.log('helpSelect');
+        const selectMenu = this.createSelectMenu();
+        await handleSelectMenu(interaction, client, selectMenu);
     }
 }

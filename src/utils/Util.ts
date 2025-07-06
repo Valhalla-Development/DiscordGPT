@@ -61,23 +61,45 @@ export function messageDelete(message: Message, delay: number): void {
 }
 
 /**
- * Fetches all registered global application command IDs.
- * @param client - The Discord client instance.
- * @returns A Promise that resolves to a record of command names to their corresponding IDs.
- * @throws Error if unable to fetch commands or if the client's application is not available.
+ * Fetches command IDs for both global and guild commands.
+ * @param client - The Discord client instance
+ * @returns Promise resolving to a record of command names to their IDs
  */
 export async function getCommandIds(client: Client): Promise<Record<string, string>> {
     if (!client.application) {
         throw new Error('Client application is not available');
     }
 
-    try {
-        const commands = await client.application.commands.fetch();
-        return Object.fromEntries(commands.map((c) => [c.name, c.id]));
-    } catch (error) {
-        console.error('Error fetching global commands:', error);
-        throw error;
+    const commandIds = new Map<string, string>();
+    const isGuildOnly = client.botGuilds && client.botGuilds.length > 0;
+
+    // Fetch global commands
+    if (!isGuildOnly) {
+        try {
+            const globalCommands = await client.application.commands.fetch();
+            for (const cmd of globalCommands.values()) {
+                commandIds.set(cmd.name, cmd.id);
+            }
+        } catch (error) {
+            console.warn('Could not fetch global commands:', error);
+        }
     }
+
+    // Fetch guild commands
+    const guildPromises = Array.from(client.guilds.cache.values()).map(async (guild) => {
+        try {
+            const guildCommands = await guild.commands.fetch();
+            for (const cmd of guildCommands.values()) {
+                commandIds.set(cmd.name, cmd.id);
+            }
+        } catch (error) {
+            console.warn(`Could not fetch commands for guild ${guild.name}:`, error);
+        }
+    });
+
+    await Promise.allSettled(guildPromises);
+
+    return Object.fromEntries(commandIds);
 }
 
 /**

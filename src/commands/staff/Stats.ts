@@ -1,10 +1,10 @@
 import { Category } from '@discordx/utilities';
 import {
     type CommandInteraction,
+    codeBlock,
     EmbedBuilder,
     GuildMemberRoleManager,
     PermissionsBitField,
-    codeBlock,
 } from 'discord.js';
 import { type Client, Discord, Slash } from 'discordx';
 import { fetchAllData } from '../../utils/Util.js';
@@ -75,7 +75,7 @@ export class Stats {
         const userNames = userNamesArray.join('\n');
         const queries = queriesArray.join('\n');
 
-        if (!userNames || !queries) {
+        if (!(userNames && queries)) {
             await interaction.reply({ content: 'No data was found.', ephemeral: true });
             return;
         }

@@ -99,7 +99,7 @@ export class Whitelist {
         // Remove user from whitelist
         if (option === 'remove') {
             // User is not whitelisted.
-            if (!getDb || !getDb.whitelisted) {
+            if (!(getDb && getDb.whitelisted)) {
                 await interaction.reply({ content: '⚠️ User is not Whitelisted.', ephemeral: true });
                 return;
             }
@@ -124,10 +124,10 @@ export class Whitelist {
         // Remove user from whitelist
         if (option === 'check') {
             // User is not whitelisted.
-            if (!getDb || !getDb.whitelisted) {
-                await interaction.reply({ content: '⚠️ User is not Whitelisted.', ephemeral: true });
-            } else {
+            if (getDb && getDb.whitelisted) {
                 await interaction.reply({ content: '✅️ User is Whitelisted.', ephemeral: true });
+            } else {
+                await interaction.reply({ content: '⚠️ User is not Whitelisted.', ephemeral: true });
             }
         }
     }

@@ -13,7 +13,7 @@ import {
     type User,
 } from 'discord.js';
 import { ButtonComponent, type Client, Discord, Slash, SlashOption } from 'discordx';
-import { type UserData, getGptQueryData, setGptQueryData } from '../../utils/Util.js';
+import { getGptQueryData, setGptQueryData, type UserData } from '../../utils/Util.js';
 
 @Discord()
 @Category('Miscellaneous')
@@ -46,7 +46,13 @@ export class Queries {
             inline: true,
         });
 
-        if (!getData.whitelisted && !getData.blacklisted) {
+        if (getData.whitelisted || getData.blacklisted) {
+            fields.push({
+                name: 'Status',
+                value: `${getData.whitelisted ? '`Whitelisted`' : '`Blacklisted`'}`,
+                inline: true,
+            });
+        } else {
             const remaining = `${Number(process.env.MAX_QUERIES_LIMIT) - Number(getData.queriesRemaining)}/${process.env.MAX_QUERIES_LIMIT}`;
             const resetValue =
                 getData.queriesRemaining === Number(process.env.MAX_QUERIES_LIMIT)
@@ -64,12 +70,6 @@ export class Queries {
                     inline: true,
                 }
             );
-        } else {
-            fields.push({
-                name: 'Status',
-                value: `${getData.whitelisted ? '`Whitelisted`' : '`Blacklisted`'}`,
-                inline: true,
-            });
         }
 
         const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -428,8 +428,8 @@ export class Queries {
             Number(db.totalQueries) || 0,
             Number(db.queriesRemaining) || 0,
             Number(db.expiration) || 0,
-            db.whitelisted || false,
-            db.blacklisted || false,
+            db.whitelisted,
+            db.blacklisted,
             ''
         );
 

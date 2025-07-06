@@ -1,35 +1,43 @@
 {
-	"$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-	"extends": ["ultracite"],
-	"linter": {
-		"rules": {
-			"suspicious": {
-				"noConsole": "off",
-				"noConsoleLog": "off"
-			},
-			"style": {
-				"useFilenamingConvention": "off",
-				"noNonNullAssertion": "off"
-			},
-			"nursery": {
-				"noNestedTernary": "off"
-			},
-			"complexity": {
-				"noExcessiveCognitiveComplexity": "off",
-				"useOptionalChain": "off"
-			},
-			"performance": {
-				"useTopLevelRegex": "off"
-			}
-		}
-	},
-	"javascript": {
-		"parser": {
-			"unsafeParameterDecoratorsEnabled": true
-		},
-		"formatter": {
-			"indentWidth": 4,
-			"lineWidth": 100
-		}
-	}
+  "$schema": "https://biomejs.dev/schemas/2.0.6/schema.json",
+  "extends": ["ultracite"],
+  "linter": {
+    "rules": {
+      "suspicious": {
+        "noConsole": "off"
+      },
+      "style": {
+        "useFilenamingConvention": "off",
+        "noNonNullAssertion": "off",
+        "noParameterAssign": "error",
+        "useAsConstAssertion": "error",
+        "useDefaultParameterLast": "error",
+        "useEnumInitializers": "error",
+        "useSelfClosingElements": "error",
+        "useSingleVarDeclarator": "error",
+        "noUnusedTemplateLiteral": "error",
+        "useNumberNamespace": "error",
+        "noInferrableTypes": "error",
+        "noUselessElse": "error",
+        "noNestedTernary": "off"
+      },
+      "nursery": {},
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "off",
+        "useOptionalChain": "off"
+      },
+      "performance": {
+        "useTopLevelRegex": "off"
+      }
+    }
+  },
+  "javascript": {
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    },
+    "formatter": {
+      "indentWidth": 4,
+      "lineWidth": 100
+    }
+  }
 }

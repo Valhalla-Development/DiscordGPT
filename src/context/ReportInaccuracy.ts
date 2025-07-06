@@ -2,6 +2,7 @@ import {
     ActionRowBuilder,
     ApplicationCommandType,
     ChannelType,
+    codeBlock,
     type GuildTextBasedChannel,
     type MessageContextMenuCommandInteraction,
     ModalBuilder,
@@ -9,7 +10,6 @@ import {
     PermissionsBitField,
     TextInputBuilder,
     TextInputStyle,
-    codeBlock,
 } from 'discord.js';
 import { type Client, ContextMenu, Discord, ModalComponent } from 'discordx';
 
@@ -21,7 +21,7 @@ export class ReportInaccuracy {
      * Handles the context menu interaction for reporting an inaccuracy.
      * @param interaction - The context menu interaction.
      * @param client - The Discord client.
-     * */
+     */
     @ContextMenu({
         name: 'Report Inaccuracy',
         type: ApplicationCommandType.Message,

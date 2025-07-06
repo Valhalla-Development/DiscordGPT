@@ -2,6 +2,7 @@ import {
     AttachmentBuilder,
     ChannelType,
     CommandInteraction,
+    codeBlock,
     EmbedBuilder,
     type Guild,
     type GuildTextBasedChannel,
@@ -11,7 +12,6 @@ import {
     ThreadAutoArchiveDuration,
     type ThreadChannel,
     type User,
-    codeBlock,
 } from 'discord.js';
 import type { Client } from 'discordx';
 import type { TextContentBlock } from 'openai/resources/beta/threads';
@@ -119,8 +119,8 @@ export async function loadAssistant(
                 Number(userQueryData.totalQueries) || 0,
                 Number(userQueryData.queriesRemaining) || 0,
                 Number(userQueryData.expiration) || 0,
-                userQueryData.whitelisted || false,
-                userQueryData.blacklisted || false,
+                userQueryData.whitelisted,
+                userQueryData.blacklisted,
                 thread.id
             );
         }
@@ -278,7 +278,7 @@ export async function setGptQueryData(
  */
 export async function getGptQueryData(userId: string): Promise<UserData | false> {
     const data = (await keyv.get(userId)) as UserData | null;
-    return data || false;
+    return data;
 }
 
 /**
@@ -496,8 +496,9 @@ export async function handleError(client: Client, error: unknown): Promise<void>
     // Ensure we have a stack trace
     const errorStack = normalizedError.stack || normalizedError.message || String(error);
 
-    if (process.env.ENABLE_LOGGING?.toLowerCase() !== 'true' || !process.env.LOGGING_CHANNEL)
+    if (process.env.ENABLE_LOGGING?.toLowerCase() !== 'true' || !process.env.LOGGING_CHANNEL) {
         return;
+    }
 
     /**
      * Truncates the description if it exceeds the maximum length.
@@ -506,7 +507,9 @@ export async function handleError(client: Client, error: unknown): Promise<void>
      */
     function truncateDescription(description: string): string {
         const maxLength = 4096;
-        if (description.length <= maxLength) return description;
+        if (description.length <= maxLength) {
+            return description;
+        }
 
         const numTruncatedChars = description.length - maxLength;
         return `${description.slice(0, maxLength)}... ${numTruncatedChars} more`;

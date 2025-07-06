@@ -1,7 +1,7 @@
 import {
     ApplicationCommandType,
-    type MessageContextMenuCommandInteraction,
     codeBlock,
+    type MessageContextMenuCommandInteraction,
 } from 'discord.js';
 import { type Client, ContextMenu, Discord } from 'discordx';
 import { runTTS } from '../utils/Util.js';
@@ -13,7 +13,7 @@ export class TextToSpeech {
      * Converts the content of a message into speech if TTS is enabled and valid.
      * @param interaction - The context menu interaction initiated by the user.
      * @param client - The Discord client.
-     * */
+     */
     @ContextMenu({
         name: 'Text to Speech',
         type: ApplicationCommandType.Message,

@@ -99,7 +99,7 @@ export class Blacklist {
         // Remove user from blacklist
         if (option === 'remove') {
             // User is not blacklisted.
-            if (!getDb || !getDb.blacklisted) {
+            if (!(getDb && getDb.blacklisted)) {
                 await interaction.reply({ content: '⚠️ User is not Blacklisted.', ephemeral: true });
                 return;
             }
@@ -124,10 +124,10 @@ export class Blacklist {
         // Remove user from blacklist
         if (option === 'check') {
             // User is not blacklisted.
-            if (!getDb || !getDb.blacklisted) {
-                await interaction.reply({ content: '⚠️ User is not Blacklisted.', ephemeral: true });
-            } else {
+            if (getDb && getDb.blacklisted) {
                 await interaction.reply({ content: '✅️ User is Blacklisted.', ephemeral: true });
+            } else {
+                await interaction.reply({ content: '⚠️ User is not Blacklisted.', ephemeral: true });
             }
         }
     }

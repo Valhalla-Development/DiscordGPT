@@ -1,4 +1,4 @@
-import { ChannelType, type CommandInteraction, codeBlock, EmbedBuilder } from 'discord.js';
+import { ChannelType, codeBlock, EmbedBuilder } from 'discord.js';
 import { type ArgsOf, type Client, Discord, On } from 'discordx';
 import moment from 'moment';
 import '@colors/colors';
@@ -14,20 +14,6 @@ export class InteractionCreate {
      */
     @On({ event: 'interactionCreate' })
     async onInteraction([interaction]: ArgsOf<'interactionCreate'>, client: Client): Promise<void> {
-        try {
-            if (interaction.isCommand()) {
-                await this.handleCommandInteraction(interaction, client);
-            }
-        } catch (error) {
-            console.error('Error handling interaction:', error);
-        }
-    }
-
-    private async handleCommandInteraction(
-        interaction: CommandInteraction,
-        client: Client
-    ): Promise<void> {
-        // Check if the interaction is in a guild and in a guild text channel, and is either a string select menu or a chat input command.
         if (
             !(
                 interaction &&
@@ -82,77 +68,75 @@ export class InteractionCreate {
         }
 
         if (config.ENABLE_LOGGING) {
-            await this.logCommandUsage(interaction, client);
-        }
-    }
+            try {
+                const channel = client.channels.cache.get(config.COMMAND_LOGGING_CHANNEL!);
 
-    private async logCommandUsage(interaction: CommandInteraction, client: Client): Promise<void> {
-        try {
-            const channel = client.channels.cache.get(config.COMMAND_LOGGING_CHANNEL!);
+                if (!(channel && 'send' in channel)) {
+                    console.error(
+                        `Invalid command logging channel: ${config.COMMAND_LOGGING_CHANNEL}`
+                    );
+                    return;
+                }
 
-            if (!(channel && 'send' in channel)) {
-                console.error(`Invalid command logging channel: ${config.COMMAND_LOGGING_CHANNEL}`);
-                return;
+                const reply = await interaction.fetchReply().catch(() => null);
+
+                const link =
+                    reply?.guildId && reply?.channelId && reply?.id
+                        ? `https://discord.com/channels/${reply.guildId}/${reply.channelId}/${reply.id}`
+                        : `<#${interaction.channelId}>`;
+
+                const now = Date.now();
+                const nowInSeconds = Math.floor(now / 1000);
+                const executedCommand = interaction.isChatInputCommand()
+                    ? interaction.toString()
+                    : interaction.isContextMenuCommand()
+                      ? interaction.commandName
+                      : '';
+
+                // Embed logging
+                const logEmbed = new EmbedBuilder()
+                    .setColor('#e91e63')
+                    .setTitle(
+                        `${interaction.isChatInputCommand() ? 'Command' : 'Context Menu'} Executed`
+                    )
+                    .addFields(
+                        { name: '👤 User', value: `${interaction.user}`, inline: true },
+                        { name: '📅 Date', value: `<t:${nowInSeconds}:F>`, inline: true },
+                        { name: '📰 Interaction', value: link, inline: true },
+                        {
+                            name: `🖥️ ${interaction.isChatInputCommand() ? 'Command' : 'Context Menu'}`,
+                            value: codeBlock('kotlin', executedCommand),
+                        }
+                    );
+
+                if (interaction.isChatInputCommand()) {
+                    // Console logging
+                    console.log(
+                        `${'◆◆◆◆◆◆'.rainbow.bold} ${moment(now).format('MMM D, h:mm A')} ${reversedRainbow('◆◆◆◆◆◆')}\n` +
+                            `${'🔧 Command:'.brightBlue.bold} ${executedCommand.brightYellow.bold}\n` +
+                            `${'🔍 Executor:'.brightBlue.bold} ${interaction.user.displayName.underline.brightMagenta.bold} ${'('.gray.bold}${'Guild: '.brightBlue.bold}${interaction.guild?.name.underline.brightMagenta.bold}${')'}`
+                    );
+                }
+
+                if (interaction.isContextMenuCommand()) {
+                    // Console logging
+                    console.log(
+                        `${'◆◆◆◆◆◆'.rainbow.bold} ${moment(now).format('MMM D, h:mm A')} ${reversedRainbow('◆◆◆◆◆◆')}\n` +
+                            `${'🔧 Context Menu:'.brightBlue.bold} ${executedCommand.brightYellow.bold}\n` +
+                            `${'🔍 Executor:'.brightBlue.bold} ${interaction.user.displayName.underline.brightMagenta.bold} ${'('.gray.bold}${'Guild: '.brightBlue.bold}${interaction.guild?.name.underline.brightMagenta.bold}${')'}`
+                    );
+                }
+
+                // Channel logging
+                if (
+                    (interaction.isChatInputCommand() || interaction.isContextMenuCommand()) &&
+                    config.COMMAND_LOGGING_CHANNEL
+                ) {
+                    channel.send({ embeds: [logEmbed] }).catch(console.error);
+                }
+            } catch (error) {
+                console.error('Error logging command usage:', error);
             }
-
-            const reply = await interaction.fetchReply().catch(() => null);
-
-            const link =
-                reply?.guildId && reply?.channelId && reply?.id
-                    ? `https://discord.com/channels/${reply.guildId}/${reply.channelId}/${reply.id}`
-                    : `<#${interaction.channelId}>`;
-
-            const now = Date.now();
-            const nowInSeconds = Math.floor(now / 1000);
-            const executedCommand = interaction.isChatInputCommand()
-                ? interaction.toString()
-                : interaction.isContextMenuCommand()
-                  ? interaction.commandName
-                  : '';
-
-            // Embed logging
-            const logEmbed = new EmbedBuilder()
-                .setColor('#e91e63')
-                .setTitle(
-                    `${interaction.isChatInputCommand() ? 'Command' : 'Context Menu'} Executed`
-                )
-                .addFields(
-                    { name: '👤 User', value: `${interaction.user}`, inline: true },
-                    { name: '📅 Date', value: `<t:${nowInSeconds}:F>`, inline: true },
-                    { name: '📰 Interaction', value: link, inline: true },
-                    {
-                        name: `🖥️ ${interaction.isChatInputCommand() ? 'Command' : 'Context Menu'}`,
-                        value: codeBlock('kotlin', executedCommand),
-                    }
-                );
-
-            if (interaction.isChatInputCommand()) {
-                // Console logging
-                console.log(
-                    `${'◆◆◆◆◆◆'.rainbow.bold} ${moment(now).format('MMM D, h:mm A')} ${reversedRainbow('◆◆◆◆◆◆')}\n` +
-                        `${'🔧 Command:'.brightBlue.bold} ${executedCommand.brightYellow.bold}\n` +
-                        `${'🔍 Executor:'.brightBlue.bold} ${interaction.user.displayName.underline.brightMagenta.bold} ${'('.gray.bold}${'Guild: '.brightBlue.bold}${interaction.guild?.name.underline.brightMagenta.bold}${')'}`
-                );
-            }
-
-            if (interaction.isContextMenuCommand()) {
-                // Console logging
-                console.log(
-                    `${'◆◆◆◆◆◆'.rainbow.bold} ${moment(now).format('MMM D, h:mm A')} ${reversedRainbow('◆◆◆◆◆◆')}\n` +
-                        `${'🔧 Context Menu:'.brightBlue.bold} ${executedCommand.brightYellow.bold}\n` +
-                        `${'🔍 Executor:'.brightBlue.bold} ${interaction.user.displayName.underline.brightMagenta.bold} ${'('.gray.bold}${'Guild: '.brightBlue.bold}${interaction.guild?.name.underline.brightMagenta.bold}${')'}`
-                );
-            }
-
-            // Channel logging
-            if (
-                (interaction.isChatInputCommand() || interaction.isContextMenuCommand()) &&
-                config.COMMAND_LOGGING_CHANNEL
-            ) {
-                channel.send({ embeds: [logEmbed] }).catch(console.error);
-            }
-        } catch (error) {
-            console.error('Error logging command usage:', error);
         }
     }
 }

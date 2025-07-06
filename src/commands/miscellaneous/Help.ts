@@ -198,9 +198,8 @@ async function handleSelectMenu(
 
         const errorContainer = new ContainerBuilder().addTextDisplayComponents(errorText);
         await interaction.reply({
-            ephemeral: true,
             components: [errorContainer],
-            flags: MessageFlags.IsComponentsV2,
+            flags: [MessageFlags.IsComponentsV2, MessageFlags.Ephemeral],
         });
         return;
     }

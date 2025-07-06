@@ -69,15 +69,6 @@ export class InteractionCreate {
 
         if (config.ENABLE_LOGGING) {
             try {
-                const channel = client.channels.cache.get(config.COMMAND_LOGGING_CHANNEL!);
-
-                if (!(channel && 'send' in channel)) {
-                    console.error(
-                        `Invalid command logging channel: ${config.COMMAND_LOGGING_CHANNEL}`
-                    );
-                    return;
-                }
-
                 const reply = await interaction.fetchReply().catch(() => null);
 
                 const link =
@@ -87,27 +78,12 @@ export class InteractionCreate {
 
                 const now = Date.now();
                 const nowInSeconds = Math.floor(now / 1000);
+
                 const executedCommand = interaction.isChatInputCommand()
                     ? interaction.toString()
                     : interaction.isContextMenuCommand()
                       ? interaction.commandName
                       : '';
-
-                // Embed logging
-                const logEmbed = new EmbedBuilder()
-                    .setColor('#e91e63')
-                    .setTitle(
-                        `${interaction.isChatInputCommand() ? 'Command' : 'Context Menu'} Executed`
-                    )
-                    .addFields(
-                        { name: '👤 User', value: `${interaction.user}`, inline: true },
-                        { name: '📅 Date', value: `<t:${nowInSeconds}:F>`, inline: true },
-                        { name: '📰 Interaction', value: link, inline: true },
-                        {
-                            name: `🖥️ ${interaction.isChatInputCommand() ? 'Command' : 'Context Menu'}`,
-                            value: codeBlock('kotlin', executedCommand),
-                        }
-                    );
 
                 if (interaction.isChatInputCommand()) {
                     // Console logging
@@ -127,12 +103,31 @@ export class InteractionCreate {
                     );
                 }
 
+                // Embed logging
+                const logEmbed = new EmbedBuilder()
+                    .setColor('#e91e63')
+                    .setTitle(
+                        `${interaction.isChatInputCommand() ? 'Command' : 'Context Menu'} Executed`
+                    )
+                    .addFields(
+                        { name: '👤 User', value: `${interaction.user}`, inline: true },
+                        { name: '📅 Date', value: `<t:${nowInSeconds}:F>`, inline: true },
+                        { name: '📰 Interaction', value: link, inline: true },
+                        {
+                            name: `🖥️ ${interaction.isChatInputCommand() ? 'Command' : 'Context Menu'}`,
+                            value: codeBlock('kotlin', executedCommand),
+                        }
+                    );
+
                 // Channel logging
                 if (
                     (interaction.isChatInputCommand() || interaction.isContextMenuCommand()) &&
                     config.COMMAND_LOGGING_CHANNEL
                 ) {
-                    channel.send({ embeds: [logEmbed] }).catch(console.error);
+                    const channel = client.channels.cache.get(config.COMMAND_LOGGING_CHANNEL);
+                    if (channel?.type === ChannelType.GuildText) {
+                        channel.send({ embeds: [logEmbed] }).catch(console.error);
+                    }
                 }
             } catch (error) {
                 console.error('Error logging command usage:', error);

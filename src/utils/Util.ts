@@ -20,7 +20,7 @@ import KeyvSqlite from '@keyv/sqlite';
 import Keyv from 'keyv';
 import moment from 'moment';
 import OpenAI from 'openai';
-import { config } from '../config/Config.js';
+import { config, durationToMs } from '../config/Config.js';
 
 export interface UserData {
     totalQueries: number;
@@ -320,9 +320,9 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
     // Retrieve user's GPT query data from the database
     const userQueryData = await getGptQueryData(userId);
 
-    // Calculate current time and expiration time (24 hours from now)
+    // Calculate current time and expiration time (based on configured reset time)
     const currentTime = new Date();
-    const expirationTime = new Date(currentTime.getTime() + 24 * 60 * 60 * 1000);
+    const expirationTime = new Date(currentTime.getTime() + durationToMs(config.QUERIES_RESET_TIME));
 
     // If the user has no existing data, create a new entry
     if (!userQueryData) {

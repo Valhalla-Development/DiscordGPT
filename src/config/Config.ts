@@ -21,6 +21,36 @@ const configSchema = z.object({
 
     // Required rate limiting
     MAX_QUERIES_LIMIT: z.string().min(1, 'Max queries limit is required').transform(Number),
+    
+    // Optional query reset time (minimum 1h, maximum 7d)
+    QUERIES_RESET_TIME: z
+        .string()
+        .optional()
+        .default('24h')
+        .transform((val) => val || '24h')
+        .refine((val) => {
+            const timeRegex = /^(\d+)(m|h|d)$/i;
+            const match = val.match(timeRegex);
+            if (!match) {
+                return false;
+            }
+            
+            const value = Number.parseInt(match[1], 10);
+            const unit = match[2].toLowerCase();
+            
+            // Convert to minutes for validation
+            let minutes = 0;
+            if (unit === 'm') {
+                minutes = value;
+            } else if (unit === 'h') {
+                minutes = value * 60;
+            } else if (unit === 'd') {
+                minutes = value * 24 * 60;
+            }
+            
+            // Min 1h (60 minutes), Max 7d (10080 minutes)
+            return minutes >= 60 && minutes <= 10_080;
+        }, 'value must be between 1h and 7d (e.g., "1h", "6h", "24h", "7d")'),
 
     // Required admin/staff configuration
     ADMIN_USER_IDS: z.string().min(1, 'Admin user IDs are required').transform(stringToArray),
@@ -91,10 +121,51 @@ try {
             .map((issue) => issue.path[0])
             .join(', ');
 
-        throw new Error(`Missing required environment variables: ${missingVars}`);
+        const customErrors = error.issues
+            .filter((issue) => issue.code === 'custom')
+            .map((issue) => `${issue.path[0]}: ${issue.message}`)
+            .join(', ');
+
+        if (missingVars) {
+            throw new Error(`Missing required environment variables: ${missingVars}`);
+        }
+        
+        if (customErrors) {
+            throw new Error(`Configuration validation errors: ${customErrors}`);
+        }
+        
+        throw new Error(`Configuration error: ${error.message}`);
     }
     throw error;
 }
 
 export { config };
 export const isDev = config.NODE_ENV === 'development';
+
+/**
+ * Converts duration string (e.g., "1h", "6h", "24h", "7d") to milliseconds
+ * @param duration - Duration string like "1h", "6h", "24h", "7d"
+ * @returns Duration in milliseconds
+ */
+export function durationToMs(duration: string): number {
+    const timeRegex = /^(\d+)(m|h|d)$/i;
+    const match = duration.match(timeRegex);
+    
+    if (!match) {
+        throw new Error(`Invalid duration format: ${duration}`);
+    }
+    
+    const value = Number.parseInt(match[1], 10);
+    const unit = match[2].toLowerCase();
+    
+    switch (unit) {
+        case 'm':
+            return value * 60 * 1000; // minutes to ms
+        case 'h':
+            return value * 60 * 60 * 1000; // hours to ms
+        case 'd':
+            return value * 24 * 60 * 60 * 1000; // days to ms
+        default:
+            throw new Error(`Invalid duration unit: ${unit}`);
+    }
+}

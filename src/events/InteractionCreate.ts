@@ -54,6 +54,7 @@ export class InteractionCreate {
             ALLOWED_SERVER_IDS.length > 0 &&
             !ALLOWED_SERVER_IDS.some((serverId: string) => serverId === interaction.guild?.id)
         ) {
+            console.log(`❌ Guild ${interaction.guild?.id} is not whitelisted in ALLOWED_SERVER_IDS configuration.`);
             return;
         }
 

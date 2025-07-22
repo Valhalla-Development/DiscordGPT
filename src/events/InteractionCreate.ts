@@ -51,6 +51,7 @@ export class InteractionCreate {
         if (
             interaction.guild &&
             ALLOWED_SERVER_IDS &&
+            ALLOWED_SERVER_IDS.length > 0 &&
             !ALLOWED_SERVER_IDS.some((serverId: string) => serverId === interaction.guild?.id)
         ) {
             return;

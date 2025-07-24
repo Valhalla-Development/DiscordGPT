@@ -1,4 +1,4 @@
-import { ChannelType, codeBlock, EmbedBuilder } from 'discord.js';
+import { ChannelType, codeBlock, EmbedBuilder, MessageFlags } from 'discord.js';
 import { type ArgsOf, type Client, Discord, On } from 'discordx';
 import moment from 'moment';
 import '@colors/colors';
@@ -70,7 +70,7 @@ export class InteractionCreate {
                 if (channel?.isTextBased()) {
                     await interaction.reply({
                         content: `Please use me in ${channel} instead!`,
-                        ephemeral: true,
+                        flags: MessageFlags.Ephemeral,
                     });
                 }
             } catch {

@@ -54,7 +54,28 @@ export class InteractionCreate {
             ALLOWED_SERVER_IDS.length > 0 &&
             !ALLOWED_SERVER_IDS.some((serverId: string) => serverId === interaction.guild?.id)
         ) {
-            console.log(`❌ Guild ${interaction.guild?.id} is not whitelisted in ALLOWED_SERVER_IDS configuration.`);
+            console.log(
+                `❌ Guild ${interaction.guild?.id} is not whitelisted in ALLOWED_SERVER_IDS configuration.`
+            );
+            return;
+        }
+
+        // Check if bot is restricted to a specific channel
+        if (
+            config.COMMAND_USAGE_CHANNEL &&
+            interaction.channelId !== config.COMMAND_USAGE_CHANNEL
+        ) {
+            try {
+                const channel = await client.channels.fetch(config.COMMAND_USAGE_CHANNEL);
+                if (channel?.isTextBased()) {
+                    await interaction.reply({
+                        content: `Please use me in ${channel} instead!`,
+                        ephemeral: true,
+                    });
+                }
+            } catch {
+                // Silently fail if can't fetch channel
+            }
             return;
         }
 

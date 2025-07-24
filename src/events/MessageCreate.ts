@@ -43,6 +43,38 @@ export class MessageCreate {
             return;
         }
 
+        // Check if bot is restricted to a specific channel
+        if (this.commandUsageChannel && message.channel.id !== this.commandUsageChannel) {
+            // Only show redirect if user is trying to interact with the bot
+            const isMentioningBot = message.mentions.has(client.user!.id);
+            let isReplyingToBot = false;
+
+            if (message.reference) {
+                try {
+                    const repliedMessage = await message.channel.messages.fetch(
+                        `${message.reference.messageId}`
+                    );
+                    isReplyingToBot = repliedMessage.author.id === client.user?.id;
+                } catch {
+                    // Silently fail if can't fetch message
+                }
+            }
+
+            if (isMentioningBot || isReplyingToBot) {
+                try {
+                    const channel = await client.channels.fetch(this.commandUsageChannel);
+                    if (channel?.isTextBased()) {
+                        await message.reply({
+                            content: `Please use me in ${channel} instead!`,
+                        });
+                    }
+                } catch {
+                    // Silently fail if can't fetch channel
+                }
+            }
+            return;
+        }
+
         if (this.threadsEnabled) {
             const handled = await this.manageThreadsIfNeeded(message, client);
             if (handled) {

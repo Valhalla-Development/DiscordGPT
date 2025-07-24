@@ -322,7 +322,9 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
 
     // Calculate current time and expiration time (based on configured reset time)
     const currentTime = new Date();
-    const expirationTime = new Date(currentTime.getTime() + durationToMs(config.QUERIES_RESET_TIME));
+    const expirationTime = new Date(
+        currentTime.getTime() + durationToMs(config.QUERIES_RESET_TIME)
+    );
 
     // If the user has no existing data, create a new entry
     if (!userQueryData) {

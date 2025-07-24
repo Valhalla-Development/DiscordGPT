@@ -21,7 +21,7 @@ const configSchema = z.object({
 
     // Required rate limiting
     MAX_QUERIES_LIMIT: z.string().min(1, 'Max queries limit is required').transform(Number),
-    
+
     // Optional query reset time (minimum 1h, maximum 7d)
     QUERIES_RESET_TIME: z
         .string()
@@ -34,10 +34,10 @@ const configSchema = z.object({
             if (!match) {
                 return false;
             }
-            
+
             const value = Number.parseInt(match[1], 10);
             const unit = match[2].toLowerCase();
-            
+
             // Convert to minutes for validation
             let minutes = 0;
             if (unit === 'm') {
@@ -47,7 +47,7 @@ const configSchema = z.object({
             } else if (unit === 'd') {
                 minutes = value * 24 * 60;
             }
-            
+
             // Min 1h (60 minutes), Max 7d (10080 minutes)
             return minutes >= 60 && minutes <= 10_080;
         }, 'value must be between 1h and 7d (e.g., "1h", "6h", "24h", "7d")'),
@@ -129,11 +129,11 @@ try {
         if (missingVars) {
             throw new Error(`Missing required environment variables: ${missingVars}`);
         }
-        
+
         if (customErrors) {
             throw new Error(`Configuration validation errors: ${customErrors}`);
         }
-        
+
         throw new Error(`Configuration error: ${error.message}`);
     }
     throw error;
@@ -150,14 +150,14 @@ export const isDev = config.NODE_ENV === 'development';
 export function durationToMs(duration: string): number {
     const timeRegex = /^(\d+)(m|h|d)$/i;
     const match = duration.match(timeRegex);
-    
+
     if (!match) {
         throw new Error(`Invalid duration format: ${duration}`);
     }
-    
+
     const value = Number.parseInt(match[1], 10);
     const unit = match[2].toLowerCase();
-    
+
     switch (unit) {
         case 'm':
             return value * 60 * 1000; // minutes to ms

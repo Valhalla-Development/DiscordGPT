@@ -9,9 +9,9 @@ export class MessageCreate {
 
     private readonly commandUsageChannel?: string;
 
-    private allowedServers: string[];
+    private readonly allowedServers: string[];
 
-    private excludedChannels: Set<string>;
+    private readonly excludedChannels: Set<string>;
 
     private readonly supportServerInvite?: string;
 

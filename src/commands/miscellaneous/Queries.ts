@@ -9,7 +9,6 @@ import {
     EmbedBuilder,
     type EmbedField,
     GuildMemberRoleManager,
-    type InteractionResponse,
     MessageFlags,
     type User,
 } from 'discord.js';
@@ -21,8 +20,6 @@ import { getGptQueryData, setGptQueryData, type UserData } from '../../utils/Uti
 @Category('Miscellaneous')
 export class Queries {
     private user: User | undefined;
-
-    private msg: InteractionResponse | undefined | undefined;
 
     private isAdmin: boolean | undefined;
 

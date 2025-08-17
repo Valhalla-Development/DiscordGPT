@@ -19,9 +19,12 @@
         "useNumberNamespace": "error",
         "noInferrableTypes": "error",
         "noUselessElse": "error",
-        "noNestedTernary": "off"
+        "noNestedTernary": "off",
+        "noMagicNumbers": "off"
       },
-      "nursery": {},
+      "nursery": {
+        "useMaxParams": "off"
+      },
       "complexity": {
         "noExcessiveCognitiveComplexity": "off",
         "useOptionalChain": "off"

@@ -22,19 +22,19 @@ import moment from 'moment';
 import OpenAI from 'openai';
 import { config, durationToMs } from '../config/Config.js';
 
-export interface UserData {
+export type UserData = {
     totalQueries: number;
     queriesRemaining: number;
     expiration: number;
     whitelisted: boolean;
     blacklisted: boolean;
     threadId: string;
-}
+};
 
-interface EntryValue {
+type EntryValue = {
     userId?: string;
     totalQueries: number;
-}
+};
 
 const keyv = new Keyv({
     store: new KeyvSqlite({ uri: 'sqlite://src/data/db.sqlite' }),

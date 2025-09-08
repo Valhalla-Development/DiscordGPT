@@ -132,7 +132,7 @@ export async function loadAssistant(
         );
 
         const responseConfig: ResponseCreateParamsNonStreaming = {
-            model: 'gpt-4o',
+            model: config.OPENAI_MODEL,
             input: str,
             store: true,
             tools: [

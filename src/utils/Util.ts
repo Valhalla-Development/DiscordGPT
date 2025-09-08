@@ -14,12 +14,12 @@ import {
     type User,
 } from 'discord.js';
 import type { Client } from 'discordx';
-import type { TextContentBlock } from 'openai/resources/beta/threads';
 import '@colors/colors';
 import KeyvSqlite from '@keyv/sqlite';
 import Keyv from 'keyv';
 import moment from 'moment';
 import OpenAI from 'openai';
+import type { ResponseCreateParamsNonStreaming } from 'openai/resources/responses/responses.js';
 import { config, durationToMs } from '../config/Config.js';
 
 export type UserData = {
@@ -124,47 +124,6 @@ export async function loadAssistant(
 
     try {
         const openai = new OpenAI({ apiKey: config.OPENAI_API_KEY });
-        const assistant = await openai.beta.assistants.retrieve(config.OPENAI_ASSISTANT_ID!);
-
-        // Fetch existing thread or create a new one
-        let thread: OpenAI.Beta.Threads.Thread;
-        try {
-            thread =
-                userQueryData && userQueryData.threadId
-                    ? await openai.beta.threads.retrieve(userQueryData.threadId)
-                    : await openai.beta.threads.create();
-        } catch {
-            thread = await openai.beta.threads.create();
-        }
-
-        // Update user query data if necessary
-        if (userQueryData && userQueryData.threadId !== thread.id) {
-            await setGptQueryData(
-                user.id,
-                Number(userQueryData.totalQueries) || 0,
-                Number(userQueryData.queriesRemaining) || 0,
-                Number(userQueryData.expiration) || 0,
-                userQueryData.whitelisted,
-                userQueryData.blacklisted,
-                thread.id
-            );
-        }
-
-        // Check for existing run
-        const existingRun = await openai.beta.threads.runs
-            .list(thread.id)
-            .then((response) => ['queued', 'in_progress'].includes(response?.data?.[0]?.status))
-            .catch(() => false);
-
-        if (existingRun) {
-            return true;
-        }
-
-        // Create a new message and run
-        await openai.beta.threads.messages.create(thread.id, { role: 'user', content: str });
-        const run = await openai.beta.threads.runs.create(thread.id, {
-            assistant_id: assistant.id,
-        });
 
         console.log(
             `${'◆◆◆◆◆◆'.rainbow.bold} ${moment().format('MMM D, h:mm A')} ${reversedRainbow('◆◆◆◆◆◆')}\n` +
@@ -172,42 +131,53 @@ export async function loadAssistant(
                 `${'📝 Query: '.brightBlue.bold}${str.brightYellow.bold}`
         );
 
-        // Wait for completion
-        const waitForCompletion = async (): Promise<void> => {
-            const retrieve = await openai.beta.threads.runs.retrieve(run.id, {
-                thread_id: thread.id,
-            });
-
-            console.log(
-                retrieve.status === 'completed'
-                    ? `${'✅ Status: '.brightBlue.bold}${retrieve.status.brightGreen.bold}`
-                    : `${'🔄 Status: '.brightBlue.bold}${retrieve.status.brightYellow.bold}`
-            );
-
-            if (retrieve.status === 'completed') {
-                return;
-            }
-            if (!['in_progress', 'queued'].includes(retrieve.status)) {
-                throw new Error(
-                    `completion\nStatus: ${retrieve.status}${retrieve.last_error ? `\nError Code: ${retrieve.last_error.code}` : ''}`
-                );
-            }
-            await new Promise((resolve) => {
-                setTimeout(resolve, 2000);
-            });
-            await waitForCompletion();
+        const responseConfig: ResponseCreateParamsNonStreaming = {
+            model: 'gpt-4o',
+            input: str,
+            store: true,
+            tools: [
+                {
+                    type: 'code_interpreter',
+                    container: { type: 'auto' },
+                },
+            ],
         };
 
-        await waitForCompletion();
+        // If user has a previous response ID, use it for conversation continuity
+        // Skip old thread IDs from Assistants API from pre-migration
+        if (userQueryData && userQueryData.threadId && userQueryData.threadId.startsWith('resp_')) {
+            responseConfig.previous_response_id = userQueryData.threadId;
+        }
 
+        const response = await openai.responses.create(responseConfig);
+
+        // Update user data with the new response ID for conversation continuity
+        const currentUserData = userQueryData || {
+            totalQueries: 0,
+            queriesRemaining: 0,
+            expiration: 0,
+            whitelisted: false,
+            blacklisted: false,
+            threadId: '',
+        };
+
+        await setGptQueryData(
+            user.id,
+            currentUserData.totalQueries,
+            currentUserData.queriesRemaining,
+            currentUserData.expiration,
+            currentUserData.whitelisted,
+            currentUserData.blacklisted,
+            response.id // Store response ID for conversation continuity
+        );
+
+        console.log(`${'✅ Status: '.brightBlue.bold}${'completed'.brightGreen.bold}`);
         console.log(
             `${'🎉 Completed query for '.brightBlue.bold}${user.displayName.underline.brightMagenta.bold}\n`
         );
 
-        // Process and return response
-        const messages = await openai.beta.threads.messages.list(thread.id);
-        const textValue = (messages.data[0].content[0] as TextContentBlock)?.text?.value;
-        const responseText = processString(textValue);
+        // Extract text from the new response format
+        const responseText = processString(response.output_text || '');
 
         return responseText.length >= 1950 ? splitMessages(responseText, 1950) : responseText;
     } catch (error) {

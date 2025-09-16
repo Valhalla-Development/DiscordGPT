@@ -105,13 +105,13 @@ export async function getCommandIds(
 }
 
 /**
- * Loads an AI assistant to process a user query.
+ * Loads an AI response to process a user query using OpenAI Responses API.
  * @param query - The user's input query string.
  * @param user - The user object containing user information.
  * @returns A promise that resolves to either a string, an array of strings,
  *          a boolean, or an Error object.
  */
-export async function loadAssistant(
+export async function loadResponse(
     query: string,
     user: User
 ): Promise<string | string[] | Error | boolean> {
@@ -365,11 +365,11 @@ export async function checkGptAvailability(userId: string): Promise<string | boo
 }
 
 /**
- * Runs the GPT assistant for the specified user and content.
- * @param content - The content for the GPT assistant.
+ * Runs the GPT response for the specified user and content.
+ * @param content - The content for the GPT response.
  * @param user - The User object for the target.
  * @returns A promise that resolves to a string, array of strings, or boolean.
- * @throws An error if there's an issue with the GPT assistant or user queries.
+ * @throws An error if there's an issue with the GPT response or user queries.
  */
 export async function runGPT(content: string, user: User): Promise<string | string[] | boolean> {
     // Check if the user has available queries
@@ -378,8 +378,8 @@ export async function runGPT(content: string, user: User): Promise<string | stri
         return isGptAvailable;
     }
 
-    // Load the Assistant for the message content
-    const response = await loadAssistant(content.trim(), user);
+    // Load the Response for the message content
+    const response = await loadResponse(content.trim(), user);
 
     // Handle different response types
     if (typeof response === 'boolean' || typeof response === 'string' || Array.isArray(response)) {

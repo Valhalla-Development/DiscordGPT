@@ -15,12 +15,24 @@ import {
 } from 'discord.js';
 import type { Client } from 'discordx';
 import '@colors/colors';
+import { readFileSync } from 'node:fs';
 import KeyvSqlite from '@keyv/sqlite';
 import Keyv from 'keyv';
 import moment from 'moment';
 import OpenAI from 'openai';
 import type { ResponseCreateParamsNonStreaming } from 'openai/resources/responses/responses.js';
 import { config, durationToMs } from '../config/Config.js';
+
+// Load config/config.json
+const rootConfig = JSON.parse(readFileSync('config/config.json', 'utf-8')) as {
+    model: string;
+    instructions_file: string;
+    store?: boolean;
+    tools?: ResponseCreateParamsNonStreaming['tools'];
+};
+
+// Load instructions from markdown file
+const instructions = readFileSync(rootConfig.instructions_file, 'utf-8');
 
 export type UserData = {
     totalQueries: number;
@@ -132,15 +144,11 @@ export async function loadResponse(
         );
 
         const responseConfig: ResponseCreateParamsNonStreaming = {
-            model: config.OPENAI_MODEL,
+            model: rootConfig.model,
             input: str,
-            store: true,
-            tools: [
-                {
-                    type: 'code_interpreter',
-                    container: { type: 'auto' },
-                },
-            ],
+            instructions,
+            store: rootConfig.store ?? true,
+            tools: rootConfig.tools,
         };
 
         // If user has a previous response ID, use it for conversation continuity

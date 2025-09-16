@@ -1,0 +1,15 @@
+{
+  "// model": "OpenAI model id to use (e.g., gpt-4o, gpt-4o-mini). See https://platform.openai.com/docs/models for available models",
+  "model": "gpt-4o",
+
+  "// instructions_file": "Path to markdown file containing system prompt/instructions",
+  "instructions_file": "config/instructions.md",
+
+  "// store": "Whether to store responses server-side for thread continuity/history",
+  "store": true,
+
+  "// tools": "OpenAI tool configuration. See https://platform.openai.com/docs/guides/tools",
+  "tools": [
+    { "type": "code_interpreter", "container": { "type": "auto" } }
+  ]
+}

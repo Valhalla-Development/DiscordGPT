@@ -32,7 +32,7 @@ DiscordGPT is not your average chatbot – it's a powerhouse of AI-driven conver
       <p>Engage in mind-bending dialogues that'll make you question reality!</p>
     </td>
     <td width="50%">
-      <h3>🔌 Seamless OpenAI Assistants Integration</h3>
+      <h3>🔌 Seamless OpenAI Responses API Integration</h3>
       <p>Harness the power of cutting-edge AI with just a few keystrokes!</p>
     </td>
   </tr>
@@ -59,6 +59,8 @@ DiscordGPT is not your average chatbot – it's a powerhouse of AI-driven conver
 2. **Set up your secret lair:**
    - Rename `.env.example` to `.env`
    - Fill it with your super-secret keys and tokens
+   - Configure `config/config.json` with your preferred model and settings
+   - Customize `config/instructions.md` with your bot's personality
 
 3. **Summon the dependencies:**
    ```bash
@@ -93,9 +95,19 @@ DiscordGPT is not your average chatbot – it's a powerhouse of AI-driven conver
 ## 🛠️ Configuration: Customize Your AI Overlord
 
 ### 🧠 OpenAI Setup
-1. Craft your AI minion at [OpenAI Assistants](https://platform.openai.com/assistants)
-2. Obtain the sacred API key from [OpenAI API Keys](https://platform.openai.com/api-keys)
-3. Inject these secrets into your `.env` file
+1. Obtain the sacred API key from [OpenAI API Keys](https://platform.openai.com/api-keys)
+2. Inject these secrets into your `.env` file
+
+### ⚙️ Bot Configuration
+1. **`config/config.json`**: Configure model, tools, and storage settings
+   - Set your preferred OpenAI model (gpt-4o, gpt-4o-mini, etc.)
+   - Enable/disable code interpreter and file search tools
+   - Control response storage for conversation continuity
+
+2. **`config/instructions.md`**: Customize your bot's personality and behavior
+   - Write your system prompt in clean markdown
+   - Define tone, style, and response guidelines
+   - Set specific knowledge domains or restrictions
 
 ### 🤖 Discord Bot Setup
 1. Create your bot's birth certificate at [Discord Developer Portal](https://discord.com/developers/applications)

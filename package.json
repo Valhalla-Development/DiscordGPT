@@ -1,7 +1,7 @@
 {
   "name": "discordgpt",
   "version": "1.4.23",
-  "description": "DiscordGPT is a Discord bot designed to utilize an OpenAI Assistant.",
+  "description": "DiscordGPT is a Discord bot designed to utilize OpenAI Responses API.",
   "license": "GPL-3.0-or-later",
   "author": "Ragnar Lothbrok <ragnarlothbrokjr@proton.me>",
   "homepage": "https://github.com/Valhalla-Development/DiscordGPT#readme",

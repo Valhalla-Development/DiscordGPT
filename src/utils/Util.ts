@@ -434,7 +434,8 @@ export function processString(str: string): string {
                 : embedLinks
                   ? `[${text}](${url})`
                   : `[${text}](<${url}>)`
-        );
+        )
+        .replace(/(?<!<)(https?:\/\/[^\s<>]+)(?!>)/g, (url) => (embedLinks ? url : `<${url}>`));
 }
 
 /**

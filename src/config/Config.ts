@@ -17,7 +17,6 @@ const configSchema = z.object({
 
     // Required OpenAI configuration
     OPENAI_API_KEY: z.string().min(1, 'OpenAI API key is required'),
-    OPENAI_ASSISTANT_ID: z.string().min(1, 'OpenAI Assistant ID is required'),
     OPENAI_MODEL: z.string().optional().default('gpt-4o'),
 
     // Required rate limiting

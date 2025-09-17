@@ -165,9 +165,15 @@ export async function loadResponse(
                 `${'📝 Query: '.brightBlue.bold}${str.brightYellow.bold}`
         );
 
+        // Prepare input with contextual user information for conversation continuity
+        const input =
+            userQueryData && userQueryData.threadId && userQueryData.threadId.startsWith('resp_')
+                ? str // User has active conversation thread - context is maintained
+                : `Hello, my name is ${user.displayName}.\n${str}`; // New conversation - include user identity
+
         const responseConfig: ResponseCreateParamsNonStreaming = {
             model: rootConfig.model,
-            input: str,
+            input,
             instructions,
             store: rootConfig.store ?? true,
             tools: rootConfig.tools,

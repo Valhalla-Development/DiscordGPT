@@ -9,7 +9,8 @@
   "store": true,
 
   "// tools": "OpenAI tool configuration. See https://platform.openai.com/docs/guides/tools",
-  "tools": [
+  "// example": [
     { "type": "code_interpreter", "container": { "type": "auto" } }
-  ]
+  ],
+  "tools": []
 }

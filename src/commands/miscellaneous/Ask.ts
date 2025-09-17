@@ -2,7 +2,12 @@ import { Category } from '@discordx/utilities';
 import { ApplicationCommandOptionType, ChannelType, type CommandInteraction } from 'discord.js';
 import { type Client, Discord, Slash, SlashOption } from 'discordx';
 import { config } from '../../config/Config.js';
-import { handleGPTResponse, handleThreadCreation, runGPT } from '../../utils/Util.js';
+import {
+    handleGPTResponse,
+    handleThreadCreation,
+    isAllowedAIChannel,
+    runGPT,
+} from '../../utils/Util.js';
 
 @Discord()
 @Category('Miscellaneous')
@@ -27,6 +32,12 @@ export class Ask {
         interaction: CommandInteraction,
         client: Client
     ) {
+        if (!isAllowedAIChannel(interaction.channel)) {
+            await interaction.deferReply();
+            await interaction.deleteReply();
+            return;
+        }
+
         await interaction.deferReply();
 
         if (

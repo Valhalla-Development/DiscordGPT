@@ -1,7 +1,12 @@
 import { ChannelType, EmbedBuilder, type Message, type User } from 'discord.js';
 import { type ArgsOf, type Client, Discord, On } from 'discordx';
 import { config } from '../config/Config.js';
-import { handleGPTResponse, handleThreadCreation, runGPT } from '../utils/Util.js';
+import {
+    handleGPTResponse,
+    handleThreadCreation,
+    isAllowedAIChannel,
+    runGPT,
+} from '../utils/Util.js';
 
 @Discord()
 export class MessageCreate {
@@ -83,13 +88,15 @@ export class MessageCreate {
         }
 
         if (this.shouldRespond(message, client)) {
-            await this.handleGPTResponse(message.content, message.author, message, client);
+            if (isAllowedAIChannel(message.channel)) {
+                await this.handleGPTResponse(message.content, message.author, message, client);
+            }
             return;
         }
 
         if (message.reference) {
             await this.handleRepliedMessage(message, client);
-        } else if (message.mentions.has(client.user!.id)) {
+        } else if (message.mentions.has(client.user!.id) && isAllowedAIChannel(message.channel)) {
             await this.handleGPTResponse(message.content, message.author, message, client);
         }
     }
@@ -219,8 +226,14 @@ export class MessageCreate {
             }
 
             if (isBotReply && message.author.id !== client.user?.id) {
-                await this.handleGPTResponse(message.content, message.author, message, client);
-            } else if (message.mentions.has(`${client.user?.id}`) && !message.author.bot) {
+                if (isAllowedAIChannel(message.channel)) {
+                    await this.handleGPTResponse(message.content, message.author, message, client);
+                }
+            } else if (
+                message.mentions.has(`${client.user?.id}`) &&
+                !message.author.bot &&
+                isAllowedAIChannel(message.channel)
+            ) {
                 await this.handleGPTResponse(
                     repliedMessage.content,
                     message.author,

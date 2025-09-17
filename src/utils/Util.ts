@@ -23,6 +23,28 @@ import OpenAI from 'openai';
 import type { ResponseCreateParamsNonStreaming } from 'openai/resources/responses/responses.js';
 import { config, durationToMs } from '../config/Config.js';
 
+/**
+ * Returns true if AI is allowed to respond in the given channel.
+ * Rule: Allow everywhere except threads that were NOT created by the bot.
+ * Bot-created threads use the naming pattern: "Conversation with <username>".
+ */
+export function isAllowedAIChannel(channel: unknown): boolean {
+    // No channel → treat as not allowed
+    if (!channel) {
+        return false;
+    }
+
+    // Check if it's a thread channel
+    const ch = channel as { isThread?: () => boolean; name?: string };
+    if (ch.isThread?.()) {
+        // In a thread: only allow if it matches the bot-created conversation name
+        return Boolean(ch.name?.startsWith('Conversation with '));
+    }
+
+    // Not a thread → allow
+    return true;
+}
+
 // Load config/config.json
 const rootConfig = JSON.parse(readFileSync('config/config.json', 'utf-8')) as {
     model: string;
